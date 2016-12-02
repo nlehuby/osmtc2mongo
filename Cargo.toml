@@ -1,0 +1,14 @@
+[package]
+name = "osmtc2mongo"
+version = "0.1.0"
+authors = ["Pascal Rhod <pascal.rhod@canaltp.fr>"]
+
+[dependencies]
+log = "*"
+docopt = "*"
+rustc-serialize = "*"
+csv = "*"
+regex = "*"
+osmpbfreader = "*"
+ordered-float = "0.0.2"
+mdo = "*"
