@@ -42,17 +42,19 @@ struct Args {
     flag_input: String,
     flag_connection_string: String,
     flag_import_stop_points: bool,
+    flag_import_routes: bool,
 }
 
 static USAGE: &'static str = "
 Usage:
     osmtc2mongo --help
-    osmtc2mongo --input=<file> [--connection-string=<connection-string>] [--import-stop-points]
+    osmtc2mongo --input=<file> [--connection-string=<connection-string>] [--import-stop-points] [--import-routes]
 
 Options:
     -h, --help                  Show this message.
     -i, --input=<file>          OSM PBF file.
     -s, --import-stop-points    Import stop_points
+    -r, --import-routes         Import routes
     -c, --connection-string=<connection-string>
                                 Mongo parameters, [default: http://localhost:9200/osmtc]
 ";
@@ -80,6 +82,12 @@ pub struct StopPoint {
     pub name: String,
 }
 
+#[derive(RustcEncodable, RustcDecodable, Debug, Clone)]
+pub struct Route {
+    pub id: String,
+    pub name: String,
+    pub code: String,
+}
 
 fn is_stop_point(obj: &osmpbfreader::OsmObj) -> bool{
     match *obj {
@@ -93,6 +101,15 @@ fn is_stop_point(obj: &osmpbfreader::OsmObj) -> bool{
             node.tags.get("public_transport").map_or(false, |v| v == "platform") ||
             node.tags.get("highway").map_or(false, |v| v == "bus_stop")
         },
+    }
+}
+
+fn is_route(obj: &osmpbfreader::OsmObj) -> bool{
+    match *obj {
+        osmpbfreader::OsmObj::Relation(ref rel) => {
+            rel.tags.get("type").map_or(false, |v| v == "route")
+        },
+        _ => false,
     }
 }
 
@@ -135,6 +152,23 @@ fn get_rel_coord(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
         .unwrap_or(Coord::new(0., 0.))
 }
 
+fn osm_obj_2_route(obj: &osmpbfreader::OsmObj)
+                        -> Route {
+    match *obj {
+        osmpbfreader::OsmObj::Relation(ref rel) => {
+            let mut sp_id : String = "Route:Relation:".to_string();
+            sp_id.push_str(&rel.id.to_string());
+            Route{id: sp_id,
+                      name: rel.tags.get("name").unwrap_or(&"".to_string()).to_string(),
+                      code: rel.tags.get("ref").unwrap_or(&"".to_string()).to_string() }
+        },
+        _ => { Route{id: "error".to_string(),
+                    name: "error".to_string(),
+                    code: "error".to_string() } }
+    }
+}
+
+
 fn osm_obj_2_stop_point(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
                         obj: &osmpbfreader::OsmObj)
                         -> StopPoint {
@@ -169,6 +203,21 @@ fn main() {
         .unwrap_or_else(|e| e.exit());
 
     let mut parsed_pbf = parse_osm_pbf(&args.flag_input);
+
+    if args.flag_import_routes {
+        let objects = osmpbfreader::get_objs_and_deps(&mut parsed_pbf, is_route).unwrap();
+
+        let csv_file = std::path::Path::new("/tmp/osmtc2mongo_routes.csv");
+        let mut wtr = csv::Writer::from_file(csv_file).unwrap();
+        for (_, obj) in &objects {
+            if !is_route(&obj) {
+                continue;
+            }
+            let r = osm_obj_2_route(obj); //TODO : also get all members
+            let result = wtr.encode(r);
+            assert!(result.is_ok());
+        }
+    }
 
     if args.flag_import_stop_points {
         let objects = osmpbfreader::get_objs_and_deps(&mut parsed_pbf, is_stop_point).unwrap();
