@@ -107,7 +107,8 @@ fn is_stop_point(obj: &osmpbfreader::OsmObj) -> bool{
 fn is_route(obj: &osmpbfreader::OsmObj) -> bool{
     match *obj {
         osmpbfreader::OsmObj::Relation(ref rel) => {
-            rel.tags.get("type").map_or(false, |v| v == "route")
+            rel.tags.get("type").map_or(false, |v| v == "route") ||
+            rel.tags.get("type").map_or(false, |v| v == "route_master")
         },
         _ => false,
     }
@@ -155,10 +156,15 @@ fn get_rel_coord(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
 fn osm_obj_2_route(obj: &osmpbfreader::OsmObj)
                         -> Route {
     match *obj {
-        osmpbfreader::OsmObj::Relation(ref rel) => {
-            let mut sp_id : String = "Route:Relation:".to_string();
-            sp_id.push_str(&rel.id.to_string());
-            Route{id: sp_id,
+        osmpbfreader::OsmObj::Relation(ref rel)=> {
+            let mut r_id : String = "".to_string();
+            if rel.tags.get("type").unwrap_or(&"".to_string()) == "route_master" {
+                r_id.push_str("Line:Relation:");
+            } else {
+                r_id.push_str("Route:Relation:");
+            }
+            r_id.push_str(&rel.id.to_string());
+            Route{id: r_id,
                       name: rel.tags.get("name").unwrap_or(&"".to_string()).to_string(),
                       code: rel.tags.get("ref").unwrap_or(&"".to_string()).to_string() }
         },
