@@ -32,10 +32,8 @@
 extern crate osmpbfreader;
 extern crate docopt;
 extern crate rustc_serialize;
-extern crate csv;
-use std::collections::BTreeMap;
-
-pub type OsmPbfReader = osmpbfreader::OsmPbfReader<std::fs::File>;
+extern crate osmtc2mongo;
+use osmtc2mongo::*;
 
 #[derive(RustcDecodable, Debug)]
 struct Args {
@@ -59,150 +57,6 @@ Options:
                                 Mongo parameters, [default: http://localhost:9200/osmtc]
 ";
 
-fn parse_osm_pbf(path: &str) -> OsmPbfReader {
-    let path = std::path::Path::new(&path);
-    osmpbfreader::OsmPbfReader::new(std::fs::File::open(&path).unwrap())
-}
-
-#[derive(RustcEncodable, RustcDecodable, Debug, Clone)]
-pub struct Coord {
-    lat: f64,
-    lon: f64,
-}
-impl Coord {
-    fn new(lat_param: f64, lon_param: f64) -> Coord {
-        Coord { lat: lat_param, lon: lon_param }
-    }
-}
-
-#[derive(RustcEncodable, RustcDecodable, Debug, Clone)]
-pub struct StopPoint {
-    pub id: String,
-    pub coord: Coord,
-    pub name: String,
-}
-
-#[derive(RustcEncodable, RustcDecodable, Debug, Clone)]
-pub struct Route {
-    pub id: String,
-    pub name: String,
-    pub code: String,
-}
-
-fn is_stop_point(obj: &osmpbfreader::OsmObj) -> bool{
-    match *obj {
-        osmpbfreader::OsmObj::Relation(ref rel) => {
-            rel.tags.get("public_transport").map_or(false, |v| v == "platform")
-        },
-        osmpbfreader::OsmObj::Way(ref w) => {
-            w.tags.get("public_transport").map_or(false, |v| v == "platform")
-        },
-        osmpbfreader::OsmObj::Node(ref node) => {
-            node.tags.get("public_transport").map_or(false, |v| v == "platform") ||
-            node.tags.get("highway").map_or(false, |v| v == "bus_stop")
-        },
-    }
-}
-
-fn is_route(obj: &osmpbfreader::OsmObj) -> bool{
-    match *obj {
-        osmpbfreader::OsmObj::Relation(ref rel) => {
-            rel.tags.get("type").map_or(false, |v| v == "route") ||
-            rel.tags.get("type").map_or(false, |v| v == "route_master")
-        },
-        _ => false,
-    }
-}
-
-fn get_way_coord(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
-                 way: &osmpbfreader::objects::Way)
-                 -> Coord {
-    //Coord::new(0., 0.)
-    way.nodes
-        .iter()
-        .filter_map(|node_id| {
-            obj_map.get(&osmpbfreader::OsmId::Node(*node_id))
-                .and_then(|obj| obj.node())
-                .map(|node| Coord::new(node.lat, node.lon))
-        })
-        .next()
-        .unwrap_or(Coord::new(0., 0.))
-}
-
-fn get_rel_coord(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
-                 rel: &osmpbfreader::objects::Relation)
-                 -> Coord {
-    //Coord::new(0., 0.)
-    rel.refs
-        .iter()
-        .filter_map(|refe| {
-            obj_map.get(&refe.member).or_else(|| {
-                None
-            })
-        })
-        .filter_map(|osm_obj| {
-            if let &osmpbfreader::OsmObj::Way(ref way) = osm_obj {
-                Some(get_way_coord(obj_map, way))
-            } else if let &osmpbfreader::OsmObj::Node(ref node) = osm_obj {
-                Some(Coord::new(node.lat, node.lon))
-            } else {
-                None
-            }
-        })
-        .next()
-        .unwrap_or(Coord::new(0., 0.))
-}
-
-fn osm_obj_2_route(obj: &osmpbfreader::OsmObj)
-                        -> Route {
-    match *obj {
-        osmpbfreader::OsmObj::Relation(ref rel)=> {
-            let mut r_id : String = "".to_string();
-            if rel.tags.get("type").unwrap_or(&"".to_string()) == "route_master" {
-                r_id.push_str("Line:Relation:");
-            } else {
-                r_id.push_str("Route:Relation:");
-            }
-            r_id.push_str(&rel.id.to_string());
-            Route{id: r_id,
-                      name: rel.tags.get("name").unwrap_or(&"".to_string()).to_string(),
-                      code: rel.tags.get("ref").unwrap_or(&"".to_string()).to_string() }
-        },
-        _ => { Route{id: "error".to_string(),
-                    name: "error".to_string(),
-                    code: "error".to_string() } }
-    }
-}
-
-
-fn osm_obj_2_stop_point(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
-                        obj: &osmpbfreader::OsmObj)
-                        -> StopPoint {
-    match *obj {
-        osmpbfreader::OsmObj::Relation(ref rel) => {
-            let mut sp_id : String = "StopPoint:Relation:".to_string();
-            sp_id.push_str(&rel.id.to_string());
-            StopPoint{id: sp_id,
-                      name: rel.tags.get("name").unwrap_or(&"".to_string()).to_string(),
-                      coord: get_rel_coord(obj_map, rel) }
-        }
-        osmpbfreader::OsmObj::Way(ref way) => {
-            let mut sp_id : String = "StopPoint:Way:".to_string();
-            sp_id.push_str(&way.id.to_string());
-            StopPoint{id: sp_id.to_string(),
-                      name: way.tags.get("name").unwrap_or(&"".to_string()).to_string(),
-                      coord: get_way_coord(obj_map, way) }
-        }
-        osmpbfreader::OsmObj::Node(ref node) => {
-            let mut sp_id : String = "StopPoint:Node:".to_string();
-            sp_id.push_str(&node.id.to_string());
-            StopPoint{id: sp_id.to_string(),
-                      name: node.tags.get("name").unwrap_or(&"".to_string()).to_string(),
-                      coord: Coord{lat: node.lat, lon: node.lon} }
-        }
-    }
-}
-
 fn main() {
     let args: Args = docopt::Docopt::new(USAGE)
         .and_then(|d| d.decode())
@@ -211,34 +65,13 @@ fn main() {
     let mut parsed_pbf = parse_osm_pbf(&args.flag_input);
 
     if args.flag_import_routes {
-        let objects = osmpbfreader::get_objs_and_deps(&mut parsed_pbf, is_route).unwrap();
-
-        let csv_file = std::path::Path::new("/tmp/osmtc2mongo_routes.csv");
-        let mut wtr = csv::Writer::from_file(csv_file).unwrap();
-        for (_, obj) in &objects {
-            if !is_route(&obj) {
-                continue;
-            }
-            let r = osm_obj_2_route(obj); //TODO : also get all members
-            let result = wtr.encode(r);
-            assert!(result.is_ok());
-        }
+        let routes : Vec<Box<Route>> = get_routes_from_osm(&mut parsed_pbf);
+        write_routes_to_csv(routes);
     }
 
     if args.flag_import_stop_points {
-        let objects = osmpbfreader::get_objs_and_deps(&mut parsed_pbf, is_stop_point).unwrap();
-
-        let csv_file = std::path::Path::new("/tmp/osmtc2mongo.csv");
-        let mut wtr = csv::Writer::from_file(csv_file).unwrap();
-
-        for (_, obj) in &objects {
-            if !is_stop_point(&obj) {
-                continue;
-            }
-            let sp = osm_obj_2_stop_point(&objects, obj);
-            let result = wtr.encode(sp);
-            assert!(result.is_ok());
-        }
+        let stops : Vec<Box<StopPoint>> = get_stops_from_osm(&mut parsed_pbf);
+        write_stops_to_csv(stops);
     }
     println!("end of osmtc2mongo !")
 }
