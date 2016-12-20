@@ -78,7 +78,7 @@ fn is_route(obj: &osmpbfreader::OsmObj) -> bool {
         .map_or(false, |v| ["route", "route_master"].contains(&v.as_str()))
 }
 
-fn get_way_coord(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
+fn get_one_coord_from_way(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
                  way: &osmpbfreader::objects::Way)
                  -> Coord {
     way.nodes
@@ -92,7 +92,7 @@ fn get_way_coord(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
         .unwrap_or(Coord::new(0., 0.))
 }
 
-fn get_rel_coord(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
+fn get_one_coord_from_rel(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
                  rel: &osmpbfreader::objects::Relation)
                  -> Coord {
     rel.refs
@@ -104,7 +104,7 @@ fn get_rel_coord(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
         })
         .filter_map(|osm_obj| {
             match *osm_obj {
-                Way(ref way) => Some(get_way_coord(obj_map, way)),
+                Way(ref way) => Some(get_one_coord_from_way(obj_map, way)),
                 Node(ref node) => Some(Coord::new(node.lat, node.lon)),
                 Relation(..) => None,
             }
@@ -135,8 +135,8 @@ fn osm_obj_to_stop_point(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::O
                         obj: &osmpbfreader::OsmObj)
                         -> StopPoint {
     let (obj_type, obj_id, coord) = match *obj {
-        Relation(ref rel) => ("Relation", rel.id, get_rel_coord(obj_map, rel)),
-        Way(ref way) => ("Way", way.id, get_way_coord(obj_map, way)),
+        Relation(ref rel) => ("Relation", rel.id, get_one_coord_from_rel(obj_map, rel)),
+        Way(ref way) => ("Way", way.id, get_one_coord_from_way(obj_map, way)),
         Node(ref node) => ("Node", node.id, Coord{lat: node.lat, lon: node.lon})
     };
     let name = obj.tags().get("name").cloned().unwrap_or("".to_string());
