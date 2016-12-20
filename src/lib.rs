@@ -97,11 +97,7 @@ fn get_one_coord_from_rel(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::
                  -> Coord {
     rel.refs
         .iter()
-        .filter_map(|refe| {
-            obj_map.get(&refe.member).or_else(|| {
-                None
-            })
-        })
+        .filter_map(|refe| obj_map.get(&refe.member))
         .filter_map(|osm_obj| {
             match *osm_obj {
                 Way(ref way) => Some(get_one_coord_from_way(obj_map, way)),
@@ -122,9 +118,9 @@ fn osm_obj_to_route(obj: &osmpbfreader::OsmObj) -> Option<Route> {
                 "Route"
             };
             let r_id = format!("{}:Relation:{}", kind, rel.id);
-            Some(Route{id: r_id,
-                      name: rel.tags.get("name").unwrap_or(&"".to_string()).to_string(),
-                      code: rel.tags.get("ref").unwrap_or(&"".to_string()).to_string() })
+            Some(Route { id: r_id,
+                         name: rel.tags.get("name").cloned().unwrap_or("".to_string()),
+                         code: rel.tags.get("ref").cloned().unwrap_or("".to_string()) })
         },
         _ => None
     }
@@ -137,11 +133,11 @@ fn osm_obj_to_stop_point(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::O
     let (obj_type, obj_id, coord) = match *obj {
         Relation(ref rel) => ("Relation", rel.id, get_one_coord_from_rel(obj_map, rel)),
         Way(ref way) => ("Way", way.id, get_one_coord_from_way(obj_map, way)),
-        Node(ref node) => ("Node", node.id, Coord{lat: node.lat, lon: node.lon})
+        Node(ref node) => ("Node", node.id, Coord { lat: node.lat, lon: node.lon })
     };
     let name = obj.tags().get("name").cloned().unwrap_or("".to_string());
     let id = format!("StopPoint:{}:{}", obj_type, obj_id);
-    StopPoint{id: id, name: name, coord: coord}
+    StopPoint { id: id, name: name, coord: coord }
 }
 
 pub fn get_stops_from_osm(mut parsed_pbf: &mut OsmPbfReader) -> Vec<StopPoint> {
