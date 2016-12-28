@@ -60,6 +60,7 @@ pub struct Route {
     pub id: String,
     pub name: String,
     pub code: String,
+    pub shape: Vec<Vec<Coord>>,
 }
 
 pub fn parse_osm_pbf(path: &str) -> OsmPbfReader {
@@ -109,7 +110,38 @@ fn get_one_coord_from_rel(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::
         .unwrap_or(Coord::new(0., 0.))
 }
 
-fn osm_obj_to_route(obj: &osmpbfreader::OsmObj) -> Option<Route> {
+fn osm_way_to_vec(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
+                  osm_way: &osmpbfreader::Way) -> Vec<Coord> {
+    osm_way.nodes
+        .iter()
+        .map(|i| osmpbfreader::OsmId::Node(*i))
+        .map(|id| obj_map.get(&id).unwrap())
+        .filter_map(|osm_obj|
+            match *osm_obj {
+                Node(ref node) => Some(Coord::new(node.lat, node.lon)),
+                Way(..) => None,
+                Relation(..) => None,
+        })
+        .collect()
+}
+
+fn osm_route_to_shape(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
+                      osm_relation: &osmpbfreader::Relation) -> Vec<Vec<Coord>> {
+    osm_relation.refs
+        .iter()
+        .filter_map(|refe| obj_map.get(&refe.member))
+        .filter_map(|osm_obj| {
+            match *osm_obj {
+                Node(..) => None,
+                Way(ref way) => Some(osm_way_to_vec(obj_map, way)),
+                Relation(..) => None,
+            }
+        })
+        .collect()
+}
+
+fn osm_obj_to_route(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
+                    obj: &osmpbfreader::OsmObj) -> Option<Route> {
     match *obj {
         Relation(ref rel)=> {
             let kind = if rel.tags.get("type").map_or(false, |v| v == "route_master") {
@@ -120,7 +152,9 @@ fn osm_obj_to_route(obj: &osmpbfreader::OsmObj) -> Option<Route> {
             let r_id = format!("{}:Relation:{}", kind, rel.id.0);
             Some(Route { id: r_id,
                          name: rel.tags.get("name").cloned().unwrap_or("".to_string()),
-                         code: rel.tags.get("ref").cloned().unwrap_or("".to_string()) })
+                         code: rel.tags.get("ref").cloned().unwrap_or("".to_string()),
+                         shape: osm_route_to_shape(obj_map, rel)
+                })
         },
         _ => None
     }
@@ -152,7 +186,7 @@ pub fn get_routes_from_osm(pbf: &mut OsmPbfReader) -> Vec<Route> {
     let objects = pbf.get_objs_and_deps(is_route).unwrap();
     objects.values()
         .filter(|x| is_route(*x))
-        .filter_map(|obj| osm_obj_to_route(obj)) //TODO : also get all members
+        .filter_map(|obj| osm_obj_to_route(&objects, obj)) //TODO : also get all members
         .collect()
 }
 
