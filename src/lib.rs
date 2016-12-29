@@ -33,6 +33,8 @@ extern crate rustc_serialize;
 extern crate csv;
 use std::collections::BTreeMap;
 use osmpbfreader::OsmObj::*;
+use rustc_serialize::Encodable;
+use rustc_serialize::Encoder;
 
 pub type OsmPbfReader = osmpbfreader::OsmPbfReader<std::fs::File>;
 
@@ -55,12 +57,44 @@ pub struct StopPoint {
     pub name: String,
 }
 
-#[derive(RustcEncodable, RustcDecodable, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct Route {
     pub id: String,
     pub name: String,
     pub code: String,
     pub shape: Vec<Vec<Coord>>,
+}
+
+impl Encodable for Route {
+    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
+        s.emit_struct("Route", 4, |s| {
+            try!(s.emit_struct_field("id", 0, |s| {
+                s.emit_str(&self.id)
+            }));
+            try!(s.emit_struct_field("name", 1, |s| {
+                s.emit_str(&self.name)
+            }));
+            try!(s.emit_struct_field("code", 2, |s| {
+                s.emit_str(&self.code)
+            }));
+            try!(s.emit_struct_field("shape", 3, |s| {
+                if self.shape.len() == 0 {
+                    s.emit_str(&"")
+                } else {
+                    let linestring : String = self.shape.iter()
+                        .map(|vec_coord| vec_coord.iter()
+                            .map(|coord| format!("{} {}", coord.lat.to_string(), coord.lon.to_string()))
+                            .collect::<Vec<String>>()
+                            .join(", ")
+                        )
+                        .collect::<Vec<String>>()
+                        .join("), (");
+                    s.emit_str(&format!("MULTILINESTRING(({}))", linestring))
+                }
+            }));
+            Ok(())
+        })
+    }
 }
 
 pub fn parse_osm_pbf(path: &str) -> OsmPbfReader {
