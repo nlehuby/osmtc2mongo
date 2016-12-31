@@ -149,12 +149,16 @@ fn osm_way_to_vec(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
     osm_way.nodes
         .iter()
         .map(|i| osmpbfreader::OsmId::Node(*i))
-        .map(|id| obj_map.get(&id).unwrap())
+        .map(|id| { obj_map.get(&id) })
         .filter_map(|osm_obj|
-            match *osm_obj {
-                Node(ref node) => Some(Coord::new(node.lat, node.lon)),
-                Way(..) => None,
-                Relation(..) => None,
+            //To handle when a node ID is not found in obj_map collection
+            match osm_obj {
+                None => None,
+                Some(obj) => match *obj {
+                                Node(ref node) => Some(Coord::new(node.lat, node.lon)),
+                                Way(..) => None,
+                                Relation(..) => None,
+            }
         })
         .collect()
 }
