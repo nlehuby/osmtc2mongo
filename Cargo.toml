@@ -4,11 +4,7 @@ version = "0.1.0"
 authors = ["Pascal Rhod <pascal.rhod@canaltp.fr>"]
 
 [dependencies]
-log = "*"
-docopt = "*"
-rustc-serialize = "*"
-csv = "*"
-regex = "*"
-osmpbfreader = "*"
-ordered-float = "0.0.2"
-mdo = "*"
+docopt = "0.7"
+rustc-serialize = "0.3"
+csv = "0.15"
+osmpbfreader = "0.9"
