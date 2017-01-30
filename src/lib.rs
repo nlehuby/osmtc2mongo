@@ -67,6 +67,8 @@ pub struct Route {
     pub shape: Vec<Vec<Coord>>,
 }
 
+#[allow(dead_code)]
+/* to_multilinestring is to be used when issue #8 is resolved*/
 impl Route {
     fn to_multilinestring(&self) -> wkt::types::MultiLineString {
         let wkt_linestrings = self.shape.iter()
@@ -76,7 +78,7 @@ impl Route {
                     .collect()
             )
             .map(|wkt_coords| wkt::types::LineString(wkt_coords))
-            .collect::<Vec<wkt::types::LineString>>();
+            .collect();
         wkt::types::MultiLineString(wkt_linestrings)
     }
 }
