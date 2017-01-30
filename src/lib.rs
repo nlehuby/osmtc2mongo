@@ -31,12 +31,14 @@
 extern crate osmpbfreader;
 extern crate rustc_serialize;
 extern crate csv;
+extern crate wkt;
 use std::collections::BTreeMap;
 use osmpbfreader::OsmObj::*;
 use rustc_serialize::Encodable;
 use rustc_serialize::Encoder;
 
 pub type OsmPbfReader = osmpbfreader::OsmPbfReader<std::fs::File>;
+pub type WktLineString = wkt::types::LineString;
 
 
 #[derive(RustcEncodable, RustcDecodable, Debug, Clone)]
@@ -63,6 +65,20 @@ pub struct Route {
     pub name: String,
     pub code: String,
     pub shape: Vec<Vec<Coord>>,
+}
+
+impl Route {
+    fn to_multilinestring(&self) -> wkt::types::MultiLineString {
+        let wkt_linestrings = self.shape.iter()
+            .map(|vec_coord|
+                vec_coord.iter()
+                    .map(|coord| wkt::types::Coord {x: coord.lon, y: coord.lat, z: None, m: None})
+                    .collect()
+            )
+            .map(|wkt_coords| wkt::types::LineString(wkt_coords))
+            .collect::<Vec<wkt::types::LineString>>();
+        wkt::types::MultiLineString(wkt_linestrings)
+    }
 }
 
 impl Encodable for Route {
