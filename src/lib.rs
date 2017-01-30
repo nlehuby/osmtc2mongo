@@ -83,7 +83,7 @@ impl Encodable for Route {
                 } else {
                     let linestring : String = self.shape.iter()
                         .map(|vec_coord| vec_coord.iter()
-                            .map(|coord| format!("{} {}", coord.lat.to_string(), coord.lon.to_string()))
+                            .map(|coord| format!("{} {}", coord.lon.to_string(), coord.lat.to_string()))
                             .collect::<Vec<String>>()
                             .join(", ")
                         )
@@ -146,20 +146,10 @@ fn get_one_coord_from_rel(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::
 
 fn osm_way_to_vec(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
                   osm_way: &osmpbfreader::Way) -> Vec<Coord> {
-    osm_way.nodes
-        .iter()
-        .map(|i| osmpbfreader::OsmId::Node(*i))
-        .map(|id| { obj_map.get(&id) })
-        .filter_map(|osm_obj|
-            //To handle when a node ID is not found in obj_map collection
-            match osm_obj {
-                None => None,
-                Some(obj) => match *obj {
-                                Node(ref node) => Some(Coord::new(node.lat, node.lon)),
-                                Way(..) => None,
-                                Relation(..) => None,
-            }
-        })
+    osm_way.nodes.iter()
+        .filter_map(|id| obj_map.get(&osmpbfreader::OsmId::Node(*id)))
+        .filter_map(|osm_obj| osmpbfreader::OsmObj::node(osm_obj))
+        .map(|node| Coord::new(node.lat(), node.lon()))
         .collect()
 }
 
