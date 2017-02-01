@@ -176,13 +176,8 @@ fn osm_route_to_shape(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmO
     osm_relation.refs
         .iter()
         .filter_map(|refe| obj_map.get(&refe.member))
-        .filter_map(|osm_obj| {
-            match *osm_obj {
-                Node(..) => None,
-                Way(ref way) => Some(osm_way_to_vec(obj_map, way)),
-                Relation(..) => None,
-            }
-        })
+        .filter_map(|osm_obj| osmpbfreader::OsmObj::way(osm_obj))
+        .filter_map(|osm_way| Some(osm_way_to_vec(obj_map, osm_way)))
         .collect()
 }
 
