@@ -52,7 +52,7 @@ Options:
     -h, --help                  Show this message.
     -i, --input=<file>          OSM PBF file.
     -s, --import-stop-points    Import stop_points
-    -r, --import-routes         Import routes
+    -r, --import-routes         Import routes & lines
     -c, --connection-string=<connection-string>
                                 Mongo parameters, [default: http://localhost:9200/osmtc]
 ";
@@ -67,6 +67,8 @@ fn main() {
     if args.flag_import_routes {
         let routes : Vec<Route> = get_routes_from_osm(&mut parsed_pbf);
         write_routes_to_csv(routes);
+        let lines : Vec<Line> = get_lines_from_osm(&mut parsed_pbf);
+        write_lines_to_csv(lines);
     }
 
     if args.flag_import_stop_points {

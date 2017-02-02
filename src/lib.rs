@@ -67,6 +67,15 @@ pub struct Route {
     pub shape: Vec<Vec<Coord>>,
 }
 
+#[derive(Debug, Clone)]
+pub struct Line {
+    pub id: String,
+    pub name: String,
+    pub code: String,
+    pub shape: Vec<Vec<Coord>>,
+    pub routes_id: Vec<String>,
+}
+
 #[allow(dead_code)]
 /* to_multilinestring is to be used when issue #8 is resolved*/
 impl Route {
@@ -125,10 +134,16 @@ fn is_stop_point(obj: &osmpbfreader::OsmObj) -> bool {
     obj.node().and_then(|n| n.tags.get("highway")).map_or(false, |v| v == "bus_stop")
 }
 
+fn is_line(obj: &osmpbfreader::OsmObj) -> bool {
+    obj.relation()
+        .and_then(|r| r.tags.get("type"))
+        .map_or(false, |v| v == "route_master")
+}
+
 fn is_route(obj: &osmpbfreader::OsmObj) -> bool {
     obj.relation()
         .and_then(|r| r.tags.get("type"))
-        .map_or(false, |v| ["route", "route_master"].contains(&v.as_str()))
+        .map_or(false, |v| v == "route")
 }
 
 fn get_one_coord_from_way(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
@@ -185,16 +200,25 @@ fn osm_obj_to_route(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj
                     obj: &osmpbfreader::OsmObj) -> Option<Route> {
     match *obj {
         Relation(ref rel)=> {
-            let kind = if rel.tags.get("type").map_or(false, |v| v == "route_master") {
-                "Line"
-            } else {
-                "Route"
-            };
-            let r_id = format!("{}:Relation:{}", kind, rel.id.0);
-            Some(Route { id: r_id,
+            Some(Route { id: format!("Route:Relation:{}", rel.id.0),
                          name: rel.tags.get("name").cloned().unwrap_or("".to_string()),
                          code: rel.tags.get("ref").cloned().unwrap_or("".to_string()),
                          shape: osm_route_to_shape(obj_map, rel)
+                })
+        },
+        _ => None
+    }
+}
+
+fn osm_obj_to_line(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
+                    obj: &osmpbfreader::OsmObj) -> Option<Line> {
+    match *obj {
+        Relation(ref rel)=> {
+            Some(Line { id: format!("Line:Relation:{}", rel.id.0),
+                         name: rel.tags.get("name").cloned().unwrap_or("".to_string()),
+                         code: rel.tags.get("ref").cloned().unwrap_or("".to_string()),
+                         shape: osm_route_to_shape(obj_map, rel),
+                         routes_id : vec![] //TODO
                 })
         },
         _ => None
@@ -227,7 +251,15 @@ pub fn get_routes_from_osm(pbf: &mut OsmPbfReader) -> Vec<Route> {
     let objects = pbf.get_objs_and_deps(is_route).unwrap();
     objects.values()
         .filter(|x| is_route(*x))
-        .filter_map(|obj| osm_obj_to_route(&objects, obj)) //TODO : also get all members
+        .filter_map(|obj| osm_obj_to_route(&objects, obj))
+        .collect()
+}
+
+pub fn get_lines_from_osm(pbf: &mut OsmPbfReader) -> Vec<Line> {
+    let objects = pbf.get_objs_and_deps(is_line).unwrap();
+    objects.values()
+        .filter(|x| is_line(*x))
+        .filter_map(|obj| osm_obj_to_line(&objects, obj))
         .collect()
 }
 
@@ -246,5 +278,14 @@ pub fn write_routes_to_csv(routes : Vec<Route>) {
 
     for r in &routes {
         wtr.encode(r).unwrap();
+    }
+}
+
+pub fn write_lines_to_csv(lines : Vec<Line>) {
+    let csv_file = std::path::Path::new("/tmp/osmtc2mongo_lines.csv");
+    let mut wtr = csv::Writer::from_file(csv_file).unwrap();
+
+    for r in &lines {
+        wtr.encode((&r.id, &r.name, &r.code, &r.routes_id)).unwrap();
     }
 }
