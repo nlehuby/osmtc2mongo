@@ -196,6 +196,21 @@ fn osm_route_to_shape(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmO
         .collect()
 }
 
+fn osm_line_to_routes_list(route_master: &osmpbfreader::Relation) -> Option<Vec<String>> {
+    let mut all_routes_for_this_line: Vec<String> = vec![];
+
+    for member in &route_master.refs {
+        match member.member {
+            osmpbfreader::OsmId::Relation(rel_id) => {
+                all_routes_for_this_line.push(format!("Route:Relation:{}", rel_id.0));
+            }
+            _ => {}
+        }
+    }
+
+    Some(all_routes_for_this_line)
+}
+
 fn osm_obj_to_route(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
                     obj: &osmpbfreader::OsmObj) -> Option<Route> {
     match *obj {
@@ -218,7 +233,7 @@ fn osm_obj_to_line(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>
                          name: rel.tags.get("name").cloned().unwrap_or("".to_string()),
                          code: rel.tags.get("ref").cloned().unwrap_or("".to_string()),
                          shape: osm_route_to_shape(obj_map, rel),
-                         routes_id : vec![] //TODO
+                         routes_id : osm_line_to_routes_list(rel).unwrap_or(vec![])
                 })
         },
         _ => None
@@ -282,10 +297,18 @@ pub fn write_routes_to_csv(routes : Vec<Route>) {
 }
 
 pub fn write_lines_to_csv(lines : Vec<Line>) {
-    let csv_file = std::path::Path::new("/tmp/osmtc2mongo_lines.csv");
-    let mut wtr = csv::Writer::from_file(csv_file).unwrap();
+    let lines_csv_file = std::path::Path::new("osmtc2mongo_lines.csv");
+    let mut lines_wtr = csv::Writer::from_file(lines_csv_file).unwrap();
+    lines_wtr.encode(("id", "name", "code")).unwrap();
 
-    for r in &lines {
-        wtr.encode((&r.id, &r.name, &r.code, &r.routes_id)).unwrap();
+    let csv_file = std::path::Path::new("osmtc2mongo_lines_routes.csv");
+    let mut wtr = csv::Writer::from_file(csv_file).unwrap();
+    wtr.encode(("parent_relation_id", "member_id")).unwrap();
+
+    for l in &lines {
+        lines_wtr.encode((&l.id, &l.name, &l.code)).unwrap();
+	for r in &l.routes_id {
+		wtr.encode((&l.id, &r)).unwrap();
+	}
     }
 }
