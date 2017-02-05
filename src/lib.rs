@@ -204,52 +204,41 @@ fn osm_route_to_shape(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmO
         .collect()
 }
 
-fn osm_line_to_routes_list(route_master: &osmpbfreader::Relation) -> Option<Vec<String>> {
-    let mut all_routes_for_this_line: Vec<String> = vec![];
-
-    for member in &route_master.refs {
-        match member.member {
-            osmpbfreader::OsmId::Relation(rel_id) => {
-                all_routes_for_this_line.push(format!("Route:Relation:{}", rel_id.0));
-            }
-            _ => {}
-        }
-    }
-
-    Some(all_routes_for_this_line)
+fn osm_line_to_routes_list(route_master: &osmpbfreader::Relation) -> Vec<String> {
+    route_master.refs
+        .iter()
+        .filter_map(|refe| match refe.member {
+            osmpbfreader::OsmId::Relation(rel_id) => Some(format!("Route:Relation:{}", rel_id.0)),
+            _ => None,
+        })
+        .collect()
 }
 
 fn osm_obj_to_route(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
                     obj: &osmpbfreader::OsmObj)
                     -> Option<Route> {
-    match *obj {
-        Relation(ref rel) => {
-            Some(Route {
-                id: format!("Route:Relation:{}", rel.id.0),
-                name: rel.tags.get("name").cloned().unwrap_or("".to_string()),
-                code: rel.tags.get("ref").cloned().unwrap_or("".to_string()),
-                shape: osm_route_to_shape(obj_map, rel),
-            })
+    obj.relation().map(|rel| {
+        Route {
+            id: format!("Route:Relation:{}", rel.id.0),
+            name: rel.tags.get("name").cloned().unwrap_or("".to_string()),
+            code: rel.tags.get("ref").cloned().unwrap_or("".to_string()),
+            shape: osm_route_to_shape(obj_map, rel),
         }
-        _ => None,
-    }
+    })
 }
 
 fn osm_obj_to_line(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
                    obj: &osmpbfreader::OsmObj)
                    -> Option<Line> {
-    match *obj {
-        Relation(ref rel) => {
-            Some(Line {
-                id: format!("Line:Relation:{}", rel.id.0),
-                name: rel.tags.get("name").cloned().unwrap_or("".to_string()),
-                code: rel.tags.get("ref").cloned().unwrap_or("".to_string()),
-                shape: osm_route_to_shape(obj_map, rel),
-                routes_id: osm_line_to_routes_list(rel).unwrap_or(vec![]),
-            })
+    obj.relation().map(|rel| {
+        Line {
+            id: format!("Line:Relation:{}", rel.id.0),
+            name: rel.tags.get("name").cloned().unwrap_or("".to_string()),
+            code: rel.tags.get("ref").cloned().unwrap_or("".to_string()),
+            shape: osm_route_to_shape(obj_map, rel),
+            routes_id: osm_line_to_routes_list(rel),
         }
-        _ => None,
-    }
+    })
 }
 
 
