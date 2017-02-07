@@ -65,14 +65,14 @@ fn main() {
     let mut parsed_pbf = parse_osm_pbf(&args.flag_input);
 
     if args.flag_import_routes {
-        let routes : Vec<Route> = get_routes_from_osm(&mut parsed_pbf);
+        let routes = get_routes_from_osm(&mut parsed_pbf);
         write_routes_to_csv(routes);
-        let lines : Vec<Line> = get_lines_from_osm(&mut parsed_pbf);
+        let lines = get_lines_from_osm(&mut parsed_pbf);
         write_lines_to_csv(lines);
     }
 
     if args.flag_import_stop_points {
-        let stops : Vec<StopPoint> = get_stops_from_osm(&mut parsed_pbf);
+        let stops = get_stops_from_osm(&mut parsed_pbf);
         write_stops_to_csv(stops);
     }
     println!("end of osmtc2mongo !")
