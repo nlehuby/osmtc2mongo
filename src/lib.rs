@@ -65,7 +65,7 @@ pub struct Route {
     pub id: String,
     pub name: String,
     pub code: String,
-//    pub ordered_stops: Vec<&StopPoint>,
+    pub ordered_stops_id: Vec<String>,
     pub shape: Vec<Vec<Coord>>,
 }
 
@@ -132,9 +132,9 @@ impl Encodable for Route {
 }
 
 pub struct OsmTcResponse {
-    pub stop_points : Vec<StopPoint>,
-    pub routes : Option<Vec<Route>>,
-    pub lines : Option<Vec<Line>>,
+    pub stop_points: Vec<StopPoint>,
+    pub routes: Option<Vec<Route>>,
+    pub lines: Option<Vec<Line>>,
 }
 
 pub fn parse_osm_pbf(path: &str) -> OsmPbfReader {
@@ -210,6 +210,26 @@ fn osm_route_to_shape(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmO
         .collect()
 }
 
+fn osm_route_to_stop_list(osm_relation: &osmpbfreader::Relation) -> Vec<String> {
+    let stop_roles = vec!["stop",
+                          "plateform",
+                          "stop_exit_only",
+                          "stop_entry_only",
+                          "platform_exit_only",
+                          "platform_entry_only"];
+    osm_relation.refs
+        .iter()
+        .filter(|refe| stop_roles.contains(&refe.role.as_str()))
+        .filter_map(|refe| match refe.member {
+            osmpbfreader::OsmId::Node(obj_id) => Some(format!("StopPoint:Node:{}", obj_id.0)),
+            osmpbfreader::OsmId::Way(obj_id) => Some(format!("StopPoint:Way:{}", obj_id.0)),
+            osmpbfreader::OsmId::Relation(obj_id) => {
+                Some(format!("StopPoint:Relation:{}", obj_id.0))
+            }
+        })
+        .collect()
+}
+
 fn osm_line_to_routes_list(route_master: &osmpbfreader::Relation) -> Vec<String> {
     route_master.refs
         .iter()
@@ -228,6 +248,7 @@ fn osm_obj_to_route(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj
             id: format!("Route:Relation:{}", rel.id.0),
             name: rel.tags.get("name").cloned().unwrap_or("".to_string()),
             code: rel.tags.get("ref").cloned().unwrap_or("".to_string()),
+            ordered_stops_id: osm_route_to_stop_list(rel),
             shape: osm_route_to_shape(obj_map, rel),
         }
     })
@@ -300,16 +321,16 @@ pub fn get_lines_from_osm(pbf: &mut OsmPbfReader) -> Vec<Line> {
 pub fn get_osm_tcobjects(parsed_pbf: &mut OsmPbfReader, stop_points_only: bool) -> OsmTcResponse {
     let stops = get_stops_from_osm(parsed_pbf);
     if stop_points_only {
-        OsmTcResponse{
-            stop_points : stops,
+        OsmTcResponse {
+            stop_points: stops,
             routes: None,
             lines: None,
         }
     } else {
         let routes = get_routes_from_osm(parsed_pbf);
         let lines = get_lines_from_osm(parsed_pbf);
-        OsmTcResponse{
-            stop_points : stops,
+        OsmTcResponse {
+            stop_points: stops,
             routes: Some(routes),
             lines: Some(lines),
         }
