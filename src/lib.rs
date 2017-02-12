@@ -348,11 +348,13 @@ pub fn write_stops_to_csv(stops: Vec<StopPoint>) {
 }
 
 pub fn write_routes_to_csv(routes: Vec<Route>) {
-    let csv_file = std::path::Path::new("/tmp/osmtc2mongo_routes.csv");
-    let mut wtr = csv::Writer::from_file(csv_file).unwrap();
+    let csv_route_file = std::path::Path::new("/tmp/osmtc2mongo_routes.csv");
+    let csv_route_stops_file = std::path::Path::new("/tmp/osmtc2mongo_route_stops.csv");
+    let mut wtr_route = csv::Writer::from_file(csv_route_file).unwrap();
+    let mut wtr_stops = csv::Writer::from_file(csv_route_stops_file).unwrap();
 
     for r in &routes {
-        wtr.encode(r).unwrap();
+        wtr_route.encode(r).unwrap();
     }
 }
 

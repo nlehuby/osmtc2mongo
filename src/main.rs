@@ -45,14 +45,20 @@ struct Args {
 static USAGE: &'static str = "
 Usage:
     osmtc2mongo --help
-    osmtc2mongo --input=<file> [--connection-string=<connection-string>] [--import-stop-points] [--import-routes]
+    osmtc2mongo --input=<file> \
+                              [--connection-string=<connection-string>] \
+                              [--import-stop-points-only]
 
 Options:
-    -h, --help                      Show this message.
-    -i, --input=<file>              OSM PBF file.
+    -h, --help                      \
+                              Show this message.
+    -i, --input=<file>              OSM PBF \
+                              file.
     -s, --import-stop-points-only   Import only stop_points
-    -c, --connection-string=<connection-string>
-                                    Mongo parameters, [default: http://localhost:9200/osmtc]
+    \
+                              -c, --connection-string=<connection-string>
+                                    \
+                              Mongo parameters, [default: http://localhost:9200/osmtc]
 ";
 
 fn main() {

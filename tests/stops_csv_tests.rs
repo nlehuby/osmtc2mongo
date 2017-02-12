@@ -16,7 +16,10 @@ pub fn osm_fixture_routes_count() {
     let osm_path = std::env::current_dir().unwrap().join("tests/fixtures/osm_fixture.osm.pbf");
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
     let routes = osmtc2mongo::get_routes_from_osm(&mut parsed_pbf);
-    assert!(routes.len() == 2)
+    assert!(routes.len() == 2);
+    assert!(routes[0].ordered_stops_id.len() == 31);
+    assert!(routes[0].ordered_stops_id[0] == "StopPoint:Node:3270784465");
+    assert!(routes[0].ordered_stops_id[30] == "StopPoint:Node:1577028157");
 }
 
 #[test]
