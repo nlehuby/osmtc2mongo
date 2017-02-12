@@ -38,8 +38,6 @@ use rustc_serialize::Encodable;
 use rustc_serialize::Encoder;
 
 pub type OsmPbfReader = osmpbfreader::OsmPbfReader<std::fs::File>;
-pub type WktLineString = wkt::types::LineString;
-
 
 #[derive(RustcEncodable, RustcDecodable, Debug, Clone)]
 pub struct Coord {
@@ -67,6 +65,7 @@ pub struct Route {
     pub id: String,
     pub name: String,
     pub code: String,
+//    pub ordered_stops: Vec<&StopPoint>,
     pub shape: Vec<Vec<Coord>>,
 }
 
@@ -75,6 +74,7 @@ pub struct Line {
     pub id: String,
     pub name: String,
     pub code: String,
+    pub colour: String,
     pub shape: Vec<Vec<Coord>>,
     pub routes_id: Vec<String>,
 }
@@ -129,6 +129,12 @@ impl Encodable for Route {
             Ok(())
         })
     }
+}
+
+pub struct OsmTcResponse {
+    pub stop_points : Vec<StopPoint>,
+    pub routes : Option<Vec<Route>>,
+    pub lines : Option<Vec<Line>>,
 }
 
 pub fn parse_osm_pbf(path: &str) -> OsmPbfReader {
@@ -235,6 +241,7 @@ fn osm_obj_to_line(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>
             id: format!("Line:Relation:{}", rel.id.0),
             name: rel.tags.get("name").cloned().unwrap_or("".to_string()),
             code: rel.tags.get("ref").cloned().unwrap_or("".to_string()),
+            colour: rel.tags.get("colour").cloned().unwrap_or("".to_string()),
             shape: osm_route_to_shape(obj_map, rel),
             routes_id: osm_line_to_routes_list(rel),
         }
@@ -289,6 +296,26 @@ pub fn get_lines_from_osm(pbf: &mut OsmPbfReader) -> Vec<Line> {
         .filter_map(|obj| osm_obj_to_line(&objects, obj))
         .collect()
 }
+
+pub fn get_osm_tcobjects(parsed_pbf: &mut OsmPbfReader, stop_points_only: bool) -> OsmTcResponse {
+    let stops = get_stops_from_osm(parsed_pbf);
+    if stop_points_only {
+        OsmTcResponse{
+            stop_points : stops,
+            routes: None,
+            lines: None,
+        }
+    } else {
+        let routes = get_routes_from_osm(parsed_pbf);
+        let lines = get_lines_from_osm(parsed_pbf);
+        OsmTcResponse{
+            stop_points : stops,
+            routes: Some(routes),
+            lines: Some(lines),
+        }
+    }
+}
+
 
 pub fn write_stops_to_csv(stops: Vec<StopPoint>) {
     let csv_file = std::path::Path::new("/tmp/osmtc2mongo.csv");

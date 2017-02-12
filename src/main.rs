@@ -39,8 +39,7 @@ use osmtc2mongo::*;
 struct Args {
     flag_input: String,
     flag_connection_string: String,
-    flag_import_stop_points: bool,
-    flag_import_routes: bool,
+    flag_import_stop_points_only: bool,
 }
 
 static USAGE: &'static str = "
@@ -49,12 +48,11 @@ Usage:
     osmtc2mongo --input=<file> [--connection-string=<connection-string>] [--import-stop-points] [--import-routes]
 
 Options:
-    -h, --help                  Show this message.
-    -i, --input=<file>          OSM PBF file.
-    -s, --import-stop-points    Import stop_points
-    -r, --import-routes         Import routes & lines
+    -h, --help                      Show this message.
+    -i, --input=<file>              OSM PBF file.
+    -s, --import-stop-points-only   Import only stop_points
     -c, --connection-string=<connection-string>
-                                Mongo parameters, [default: http://localhost:9200/osmtc]
+                                    Mongo parameters, [default: http://localhost:9200/osmtc]
 ";
 
 fn main() {
@@ -64,16 +62,14 @@ fn main() {
 
     let mut parsed_pbf = parse_osm_pbf(&args.flag_input);
 
-    if args.flag_import_routes {
-        let routes = get_routes_from_osm(&mut parsed_pbf);
-        write_routes_to_csv(routes);
-        let lines = get_lines_from_osm(&mut parsed_pbf);
-        write_lines_to_csv(lines);
-    }
+    let osmtc_response = get_osm_tcobjects(&mut parsed_pbf, args.flag_import_stop_points_only);
+    write_stops_to_csv(osmtc_response.stop_points);
 
-    if args.flag_import_stop_points {
-        let stops = get_stops_from_osm(&mut parsed_pbf);
-        write_stops_to_csv(stops);
+    if osmtc_response.routes.is_some() {
+        write_routes_to_csv(osmtc_response.routes.unwrap());
+    }
+    if osmtc_response.lines.is_some() {
+        write_lines_to_csv(osmtc_response.lines.unwrap());
     }
     println!("end of osmtc2mongo !")
 }
