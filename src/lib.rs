@@ -354,6 +354,10 @@ pub fn write_routes_to_csv(routes: Vec<Route>) {
     let mut wtr_stops = csv::Writer::from_file(csv_route_stops_file).unwrap();
 
     for r in &routes {
+        for s in &r.ordered_stops_id {
+            let row = vec![r.id.to_string(), s.to_string()];
+            wtr_stops.write(row.into_iter());
+        }
         wtr_route.encode(r).unwrap();
     }
 }
