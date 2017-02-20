@@ -30,50 +30,43 @@
 
 #[macro_use]
 extern crate osmpbfreader;
-extern crate docopt;
 extern crate rustc_serialize;
 extern crate osmtc2mongo;
+
+extern crate structopt;
+#[macro_use]
+extern crate structopt_derive;
+use structopt::StructOpt;
+
 use osmtc2mongo::*;
 
-#[derive(RustcDecodable, Debug)]
+#[derive(StructOpt)]
 struct Args {
-    flag_input: String,
-    flag_connection_string: String,
-    flag_import_stop_points: bool,
-    flag_import_routes: bool,
+    #[structopt(long = "input", short = "i", help = "OSM PBF file")]
+    input: String,
+
+    #[structopt(long = "import-stop-points-only", short = "s",
+                help = "Import only stop_points (default is a full extraction)")]
+    import_stop_points_only: bool,
+
+    #[structopt(long = "connection_string", short = "c", default_value = "http://localhost:9200/osmtc",
+                help = "GTFS transfers.txt file")]
+    connection_string: String,
 }
 
-static USAGE: &'static str = "
-Usage:
-    osmtc2mongo --help
-    osmtc2mongo --input=<file> [--connection-string=<connection-string>] [--import-stop-points] [--import-routes]
-
-Options:
-    -h, --help                  Show this message.
-    -i, --input=<file>          OSM PBF file.
-    -s, --import-stop-points    Import stop_points
-    -r, --import-routes         Import routes & lines
-    -c, --connection-string=<connection-string>
-                                Mongo parameters, [default: http://localhost:9200/osmtc]
-";
-
 fn main() {
-    let args: Args = docopt::Docopt::new(USAGE)
-        .and_then(|d| d.decode())
-        .unwrap_or_else(|e| e.exit());
+    let args = Args::from_args();
 
-    let mut parsed_pbf = parse_osm_pbf(&args.flag_input);
+    let mut parsed_pbf = parse_osm_pbf(&args.input);
 
-    if args.flag_import_routes {
-        let routes = get_routes_from_osm(&mut parsed_pbf);
-        write_routes_to_csv(routes);
-        let lines = get_lines_from_osm(&mut parsed_pbf);
-        write_lines_to_csv(lines);
+    let osmtc_response = get_osm_tcobjects(&mut parsed_pbf, args.import_stop_points_only);
+    write_stops_to_csv(osmtc_response.stop_points);
+
+    if osmtc_response.routes.is_some() {
+        write_routes_to_csv(osmtc_response.routes.unwrap());
     }
-
-    if args.flag_import_stop_points {
-        let stops = get_stops_from_osm(&mut parsed_pbf);
-        write_stops_to_csv(stops);
+    if osmtc_response.lines.is_some() {
+        write_lines_to_csv(osmtc_response.lines.unwrap());
     }
     println!("end of osmtc2mongo !")
 }
