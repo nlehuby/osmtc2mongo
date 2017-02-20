@@ -220,12 +220,10 @@ fn osm_route_to_stop_list(osm_relation: &osmpbfreader::Relation) -> Vec<String> 
     osm_relation.refs
         .iter()
         .filter(|refe| stop_roles.contains(&refe.role.as_str()))
-        .filter_map(|refe| match refe.member {
-            osmpbfreader::OsmId::Node(obj_id) => Some(format!("StopPoint:Node:{}", obj_id.0)),
-            osmpbfreader::OsmId::Way(obj_id) => Some(format!("StopPoint:Way:{}", obj_id.0)),
-            osmpbfreader::OsmId::Relation(obj_id) => {
-                Some(format!("StopPoint:Relation:{}", obj_id.0))
-            }
+        .map(|refe| match refe.member {
+            osmpbfreader::OsmId::Node(obj_id) => format!("StopPoint:Node:{}", obj_id.0),
+            osmpbfreader::OsmId::Way(obj_id) => format!("StopPoint:Way:{}", obj_id.0),
+            osmpbfreader::OsmId::Relation(obj_id) => format!("StopPoint:Relation:{}", obj_id.0),
         })
         .collect()
 }
@@ -262,7 +260,7 @@ fn osm_obj_to_line(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>
             id: format!("Line:Relation:{}", rel.id.0),
             name: rel.tags.get("name").cloned().unwrap_or("".to_string()),
             code: rel.tags.get("ref").cloned().unwrap_or("".to_string()),
-            colour: rel.tags.get("colour").cloned().unwrap_or("".to_string()),
+            colour: rel.tags.get("colour").cloned().unwrap_or_default(),
             shape: osm_route_to_shape(obj_map, rel),
             routes_id: osm_line_to_routes_list(rel),
         }

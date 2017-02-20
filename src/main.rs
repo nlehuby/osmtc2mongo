@@ -42,12 +42,11 @@ use osmtc2mongo::*;
 
 #[derive(StructOpt)]
 struct Args {
-    //#[structopt(long = "help", short = "h", help = "Show this message")]
     #[structopt(long = "input", short = "i", help = "OSM PBF file")]
     input: String,
 
     #[structopt(long = "import-stop-points-only", short = "s",
-                help = "Import only stop_points (dafault is a full extraction)")]
+                help = "Import only stop_points (default is a full extraction)")]
     import_stop_points_only: bool,
 
     #[structopt(long = "connection_string", short = "c", default_value = "http://localhost:9200/osmtc",
