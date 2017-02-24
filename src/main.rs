@@ -28,17 +28,16 @@
 // https://groups.google.com/d/forum/navitia
 // www.navitia.io
 
-#[macro_use]
 extern crate osmpbfreader;
 extern crate rustc_serialize;
-extern crate osmtc2mongo;
-
+extern crate osm_transit_extractor;
 extern crate structopt;
+
 #[macro_use]
 extern crate structopt_derive;
 use structopt::StructOpt;
 
-use osmtc2mongo::*;
+use osm_transit_extractor::*;
 
 #[derive(StructOpt)]
 struct Args {
@@ -46,12 +45,8 @@ struct Args {
     input: String,
 
     #[structopt(long = "import-stop-points-only", short = "s",
-                help = "Import only stop_points (default is a full extraction)")]
+                help = "Imports only stop_points (default is a full extraction)")]
     import_stop_points_only: bool,
-
-    #[structopt(long = "connection_string", short = "c", default_value = "http://localhost:9200/osmtc",
-                help = "GTFS transfers.txt file")]
-    connection_string: String,
 }
 
 fn main() {
@@ -68,5 +63,5 @@ fn main() {
     if osmtc_response.lines.is_some() {
         write_lines_to_csv(osmtc_response.lines.unwrap());
     }
-    println!("end of osmtc2mongo !")
+    println!("end of osm-transit-extractor !")
 }

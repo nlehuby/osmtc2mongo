@@ -1,7 +1,7 @@
 [package]
-name = "osmtc2mongo"
+name = "osm_transit_extractor"
 version = "0.1.0"
-authors = ["Pascal Rhod <pascal.rhod@canaltp.fr>"]
+authors = ["Pascal Rhod <pascal.rhod@canaltp.fr>", "Noémie Lehuby <noemie.lehuby@canaltp.fr>"]
 
 [dependencies]
 structopt = "0.0.3"

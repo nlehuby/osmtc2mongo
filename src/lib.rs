@@ -65,6 +65,7 @@ pub struct Route {
     pub id: String,
     pub name: String,
     pub code: String,
+    pub destination: String,
     pub ordered_stops_id: Vec<String>,
     pub shape: Vec<Vec<Coord>>,
 }
@@ -109,6 +110,7 @@ impl Encodable for Route {
             try!(s.emit_struct_field("id", 0, |s| s.emit_str(&self.id)));
             try!(s.emit_struct_field("name", 1, |s| s.emit_str(&self.name)));
             try!(s.emit_struct_field("code", 2, |s| s.emit_str(&self.code)));
+            try!(s.emit_struct_field("destination", 2, |s| s.emit_str(&self.destination)));
             try!(s.emit_struct_field("shape", 3, |s| if self.shape.len() == 0 {
                 s.emit_str(&"")
             } else {
@@ -246,6 +248,7 @@ fn osm_obj_to_route(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj
             id: format!("Route:Relation:{}", rel.id.0),
             name: rel.tags.get("name").cloned().unwrap_or("".to_string()),
             code: rel.tags.get("ref").cloned().unwrap_or("".to_string()),
+            destination: rel.tags.get("to").cloned().unwrap_or("".to_string()),
             ordered_stops_id: osm_route_to_stop_list(rel),
             shape: osm_route_to_shape(obj_map, rel),
         }
@@ -337,7 +340,7 @@ pub fn get_osm_tcobjects(parsed_pbf: &mut OsmPbfReader, stop_points_only: bool) 
 
 
 pub fn write_stops_to_csv(stops: Vec<StopPoint>) {
-    let csv_file = std::path::Path::new("/tmp/osmtc2mongo.csv");
+    let csv_file = std::path::Path::new("/tmp/osm-transit-extractor_stops.csv");
     let mut wtr = csv::Writer::from_file(csv_file).unwrap();
 
     for sp in &stops {
@@ -346,10 +349,11 @@ pub fn write_stops_to_csv(stops: Vec<StopPoint>) {
 }
 
 pub fn write_routes_to_csv(routes: Vec<Route>) {
-    let csv_route_file = std::path::Path::new("/tmp/osmtc2mongo_routes.csv");
-    let csv_route_stops_file = std::path::Path::new("/tmp/osmtc2mongo_route_stops.csv");
+    let csv_route_file = std::path::Path::new("/tmp/osm-transit-extractor_routes.csv");
+    let csv_route_stops_file = std::path::Path::new("/tmp/osm-transit-extractor_route_stops.csv");
     let mut wtr_route = csv::Writer::from_file(csv_route_file).unwrap();
     let mut wtr_stops = csv::Writer::from_file(csv_route_stops_file).unwrap();
+    wtr_route.encode(("id", "name", "code", "destination", "shape")).unwrap();
 
     for r in &routes {
         for s in &r.ordered_stops_id {
@@ -361,11 +365,11 @@ pub fn write_routes_to_csv(routes: Vec<Route>) {
 }
 
 pub fn write_lines_to_csv(lines: Vec<Line>) {
-    let lines_csv_file = std::path::Path::new("/tmp/osmtc2mongo_lines.csv");
+    let lines_csv_file = std::path::Path::new("/tmp/osm-transit-extractor_lines.csv");
     let mut lines_wtr = csv::Writer::from_file(lines_csv_file).unwrap();
     lines_wtr.encode(("id", "name", "code")).unwrap();
 
-    let csv_file = std::path::Path::new("/tmp/osmtc2mongo_lines_routes.csv");
+    let csv_file = std::path::Path::new("/tmp/osm-transit-extractor_line_routes.csv");
     let mut wtr = csv::Writer::from_file(csv_file).unwrap();
     wtr.encode(("parent_relation_id", "member_id")).unwrap();
 
