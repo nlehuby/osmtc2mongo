@@ -28,12 +28,11 @@
 // https://groups.google.com/d/forum/navitia
 // www.navitia.io
 
-#[macro_use]
 extern crate osmpbfreader;
 extern crate rustc_serialize;
 extern crate osm_transit_extractor;
-
 extern crate structopt;
+
 #[macro_use]
 extern crate structopt_derive;
 use structopt::StructOpt;

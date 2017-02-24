@@ -1,3 +1,3 @@
-# osmtc2mongo [![Build status](https://travis-ci.org/CanalTP/osmtc2mongo.svg?branch=master)](https://travis-ci.org/CanalTP/osmtc2mongo)
+# osm-transit-extractor [![Build status](https://travis-ci.org/CanalTP/osm-transit-extractor.svg?branch=master)](https://travis-ci.org/CanalTP/osm-transit-extractor/)
 
-Export OSM public transport data to a mongo database.
+Export OSM public transport data.
