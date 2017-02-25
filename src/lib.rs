@@ -259,14 +259,14 @@ fn osm_obj_to_route(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj
     obj.relation().map(|rel| {
         Route {
             id: format!("Route:Relation:{}", rel.id.0),
-            name: rel.tags.get("name").cloned().unwrap_or("".to_string()),
-            code: rel.tags.get("ref").cloned().unwrap_or("".to_string()),
-            destination: rel.tags.get("to").cloned().unwrap_or("".to_string()),
-            origin: rel.tags.get("from").cloned().unwrap_or("".to_string()),
-            mode: rel.tags.get("route").cloned().unwrap_or("".to_string()),
-            colour: rel.tags.get("colour").cloned().unwrap_or("".to_string()),
-            operator: rel.tags.get("operator").cloned().unwrap_or("".to_string()),
-            network: rel.tags.get("network").cloned().unwrap_or("".to_string()),
+            name: rel.tags.get("name").cloned().unwrap_or_default(),
+            code: rel.tags.get("ref").cloned().unwrap_or_default(),
+            destination: rel.tags.get("to").cloned().unwrap_or_default(),
+            origin: rel.tags.get("from").cloned().unwrap_or_default(),
+            mode: rel.tags.get("route").cloned().unwrap_or_default(),
+            colour: rel.tags.get("colour").cloned().unwrap_or_default(),
+            operator: rel.tags.get("operator").cloned().unwrap_or_default(),
+            network: rel.tags.get("network").cloned().unwrap_or_default(),
             ordered_stops_id: osm_route_to_stop_list(rel),
             shape: osm_route_to_shape(obj_map, rel),
         }
@@ -279,8 +279,8 @@ fn osm_obj_to_line(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>
     obj.relation().map(|rel| {
         Line {
             id: format!("Line:Relation:{}", rel.id.0),
-            name: rel.tags.get("name").cloned().unwrap_or("".to_string()),
-            code: rel.tags.get("ref").cloned().unwrap_or("".to_string()),
+            name: rel.tags.get("name").cloned().unwrap_or_default(),
+            code: rel.tags.get("ref").cloned().unwrap_or_default(),
             colour: rel.tags.get("colour").cloned().unwrap_or_default(),
             mode: rel.tags.get("route_master").cloned().unwrap_or_default(),
             operator: rel.tags.get("operator").cloned().unwrap_or_default(),
@@ -307,7 +307,7 @@ fn osm_obj_to_stop_point(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::O
              })
         }
     };
-    let name = obj.tags().get("name").cloned().unwrap_or("".to_string());
+    let name = obj.tags().get("name").cloned().unwrap_or_default();
     let id = format!("StopPoint:{}:{}", obj_type, obj_id);
     StopPoint {
         id: id,
