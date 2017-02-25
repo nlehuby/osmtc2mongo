@@ -66,6 +66,11 @@ pub struct Route {
     pub name: String,
     pub code: String,
     pub destination: String,
+    pub origin: String,
+    pub colour: String,
+    pub operator: String,
+    pub network: String,
+    pub mode: String,
     pub ordered_stops_id: Vec<String>,
     pub shape: Vec<Vec<Coord>>,
 }
@@ -114,6 +119,11 @@ impl Encodable for Route {
             try!(s.emit_struct_field("name", 1, |s| s.emit_str(&self.name)));
             try!(s.emit_struct_field("code", 2, |s| s.emit_str(&self.code)));
             try!(s.emit_struct_field("destination", 2, |s| s.emit_str(&self.destination)));
+            try!(s.emit_struct_field("origin", 2, |s| s.emit_str(&self.origin)));
+            try!(s.emit_struct_field("mode", 2, |s| s.emit_str(&self.mode)));
+            try!(s.emit_struct_field("colour", 2, |s| s.emit_str(&self.colour)));
+            try!(s.emit_struct_field("operator", 2, |s| s.emit_str(&self.operator)));
+            try!(s.emit_struct_field("network", 2, |s| s.emit_str(&self.network)));
             try!(s.emit_struct_field("shape", 3, |s| if self.shape.len() == 0 {
                 s.emit_str(&"")
             } else {
@@ -252,6 +262,11 @@ fn osm_obj_to_route(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj
             name: rel.tags.get("name").cloned().unwrap_or("".to_string()),
             code: rel.tags.get("ref").cloned().unwrap_or("".to_string()),
             destination: rel.tags.get("to").cloned().unwrap_or("".to_string()),
+            origin: rel.tags.get("from").cloned().unwrap_or("".to_string()),
+            mode: rel.tags.get("route").cloned().unwrap_or("".to_string()),
+            colour: rel.tags.get("colour").cloned().unwrap_or("".to_string()),
+            operator: rel.tags.get("operator").cloned().unwrap_or("".to_string()),
+            network: rel.tags.get("network").cloned().unwrap_or("".to_string()),
             ordered_stops_id: osm_route_to_stop_list(rel),
             shape: osm_route_to_shape(obj_map, rel),
         }
@@ -359,7 +374,17 @@ pub fn write_routes_to_csv(routes: Vec<Route>) {
     let csv_route_stops_file = std::path::Path::new("/tmp/osm-transit-extractor_route_stops.csv");
     let mut wtr_route = csv::Writer::from_file(csv_route_file).unwrap();
     let mut wtr_stops = csv::Writer::from_file(csv_route_stops_file).unwrap();
-    wtr_route.encode(("id", "name", "code", "destination", "shape")).unwrap();
+    wtr_route.encode(("id",
+                 "name",
+                 "code",
+                 "destination",
+                 "origin",
+                 "mode",
+                 "colour",
+                 "operator",
+                 "network",
+                 "shape"))
+        .unwrap();
 
     for r in &routes {
         for s in &r.ordered_stops_id {
