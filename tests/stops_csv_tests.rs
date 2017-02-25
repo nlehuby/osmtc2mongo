@@ -31,6 +31,18 @@ pub fn osm_fixture_lines_count() {
 }
 
 #[test]
+pub fn osm_fixture_lines_tags() {
+    let osm_path = std::env::current_dir().unwrap().join("tests/fixtures/osm_fixture.osm.pbf");
+    let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
+    let lines = osm_transit_extractor::get_lines_from_osm(&mut parsed_pbf);
+    assert!(lines[0].colour == format!("#9C983A"));
+    assert!(lines[0].operator == format!("RATP"));
+    assert!(lines[0].network == format!("RATP"));
+    assert!(lines[0].mode == format!("bus"));
+    assert!(lines[0].code == format!("57"));
+}
+
+#[test]
 pub fn osm_fixture_stops_csv() {
     let osm_path = std::env::current_dir().unwrap().join("tests/fixtures/osm_fixture.osm.pbf");
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
