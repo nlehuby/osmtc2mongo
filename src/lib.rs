@@ -66,6 +66,11 @@ pub struct Route {
     pub name: String,
     pub code: String,
     pub destination: String,
+    pub origin: String,
+    pub colour: String,
+    pub operator: String,
+    pub network: String,
+    pub mode: String,
     pub ordered_stops_id: Vec<String>,
     pub shape: Vec<Vec<Coord>>,
 }
@@ -76,6 +81,9 @@ pub struct Line {
     pub name: String,
     pub code: String,
     pub colour: String,
+    pub operator: String,
+    pub network: String,
+    pub mode: String,
     pub shape: Vec<Vec<Coord>>,
     pub routes_id: Vec<String>,
 }
@@ -111,6 +119,11 @@ impl Encodable for Route {
             try!(s.emit_struct_field("name", 1, |s| s.emit_str(&self.name)));
             try!(s.emit_struct_field("code", 2, |s| s.emit_str(&self.code)));
             try!(s.emit_struct_field("destination", 2, |s| s.emit_str(&self.destination)));
+            try!(s.emit_struct_field("origin", 2, |s| s.emit_str(&self.origin)));
+            try!(s.emit_struct_field("mode", 2, |s| s.emit_str(&self.mode)));
+            try!(s.emit_struct_field("colour", 2, |s| s.emit_str(&self.colour)));
+            try!(s.emit_struct_field("operator", 2, |s| s.emit_str(&self.operator)));
+            try!(s.emit_struct_field("network", 2, |s| s.emit_str(&self.network)));
             try!(s.emit_struct_field("shape", 3, |s| if self.shape.len() == 0 {
                 s.emit_str(&"")
             } else {
@@ -246,9 +259,14 @@ fn osm_obj_to_route(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj
     obj.relation().map(|rel| {
         Route {
             id: format!("Route:Relation:{}", rel.id.0),
-            name: rel.tags.get("name").cloned().unwrap_or("".to_string()),
-            code: rel.tags.get("ref").cloned().unwrap_or("".to_string()),
-            destination: rel.tags.get("to").cloned().unwrap_or("".to_string()),
+            name: rel.tags.get("name").cloned().unwrap_or_default(),
+            code: rel.tags.get("ref").cloned().unwrap_or_default(),
+            destination: rel.tags.get("to").cloned().unwrap_or_default(),
+            origin: rel.tags.get("from").cloned().unwrap_or_default(),
+            mode: rel.tags.get("route").cloned().unwrap_or_default(),
+            colour: rel.tags.get("colour").cloned().unwrap_or_default(),
+            operator: rel.tags.get("operator").cloned().unwrap_or_default(),
+            network: rel.tags.get("network").cloned().unwrap_or_default(),
             ordered_stops_id: osm_route_to_stop_list(rel),
             shape: osm_route_to_shape(obj_map, rel),
         }
@@ -261,9 +279,12 @@ fn osm_obj_to_line(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>
     obj.relation().map(|rel| {
         Line {
             id: format!("Line:Relation:{}", rel.id.0),
-            name: rel.tags.get("name").cloned().unwrap_or("".to_string()),
-            code: rel.tags.get("ref").cloned().unwrap_or("".to_string()),
+            name: rel.tags.get("name").cloned().unwrap_or_default(),
+            code: rel.tags.get("ref").cloned().unwrap_or_default(),
             colour: rel.tags.get("colour").cloned().unwrap_or_default(),
+            mode: rel.tags.get("route_master").cloned().unwrap_or_default(),
+            operator: rel.tags.get("operator").cloned().unwrap_or_default(),
+            network: rel.tags.get("network").cloned().unwrap_or_default(),
             shape: osm_route_to_shape(obj_map, rel),
             routes_id: osm_line_to_routes_list(rel),
         }
@@ -286,7 +307,7 @@ fn osm_obj_to_stop_point(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::O
              })
         }
     };
-    let name = obj.tags().get("name").cloned().unwrap_or("".to_string());
+    let name = obj.tags().get("name").cloned().unwrap_or_default();
     let id = format!("StopPoint:{}:{}", obj_type, obj_id);
     StopPoint {
         id: id,
@@ -353,7 +374,17 @@ pub fn write_routes_to_csv(routes: Vec<Route>) {
     let csv_route_stops_file = std::path::Path::new("/tmp/osm-transit-extractor_route_stops.csv");
     let mut wtr_route = csv::Writer::from_file(csv_route_file).unwrap();
     let mut wtr_stops = csv::Writer::from_file(csv_route_stops_file).unwrap();
-    wtr_route.encode(("id", "name", "code", "destination", "shape")).unwrap();
+    wtr_route.encode(("id",
+                 "name",
+                 "code",
+                 "destination",
+                 "origin",
+                 "mode",
+                 "colour",
+                 "operator",
+                 "network",
+                 "shape"))
+        .unwrap();
 
     for r in &routes {
         for s in &r.ordered_stops_id {
@@ -367,14 +398,15 @@ pub fn write_routes_to_csv(routes: Vec<Route>) {
 pub fn write_lines_to_csv(lines: Vec<Line>) {
     let lines_csv_file = std::path::Path::new("/tmp/osm-transit-extractor_lines.csv");
     let mut lines_wtr = csv::Writer::from_file(lines_csv_file).unwrap();
-    lines_wtr.encode(("id", "name", "code")).unwrap();
+    lines_wtr.encode(("id", "name", "code", "operator", "network", "mode", "colour")).unwrap();
 
     let csv_file = std::path::Path::new("/tmp/osm-transit-extractor_line_routes.csv");
     let mut wtr = csv::Writer::from_file(csv_file).unwrap();
     wtr.encode(("parent_relation_id", "member_id")).unwrap();
 
     for l in &lines {
-        lines_wtr.encode((&l.id, &l.name, &l.code)).unwrap();
+        lines_wtr.encode((&l.id, &l.name, &l.code, &l.operator, &l.network, &l.mode, &l.colour))
+            .unwrap();
         for r in &l.routes_id {
             wtr.encode((&l.id, &r)).unwrap();
         }
