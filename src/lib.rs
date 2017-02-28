@@ -221,6 +221,7 @@ fn osm_route_to_shape(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmO
         .iter()
         .filter_map(|refe| obj_map.get(&refe.member))
         .filter_map(|osm_obj| osmpbfreader::OsmObj::way(osm_obj))
+        .filter(|osm_way| osm_way.is_open())
         .filter_map(|osm_way| Some(osm_way_to_vec(obj_map, osm_way)))
         .collect()
 }
