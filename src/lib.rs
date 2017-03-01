@@ -227,11 +227,12 @@ fn osm_route_to_shape(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmO
 
 fn osm_route_to_stop_list(osm_relation: &osmpbfreader::Relation) -> Vec<String> {
     let stop_roles = vec!["stop",
-                          "plateform",
+                          "platform",
                           "stop_exit_only",
                           "stop_entry_only",
                           "platform_exit_only",
-                          "platform_entry_only"];
+                          "platform_entry_only",
+                          "fixme"];
     osm_relation.refs
         .iter()
         .filter(|refe| stop_roles.contains(&refe.role.as_str()))
@@ -363,6 +364,7 @@ pub fn get_osm_tcobjects(parsed_pbf: &mut OsmPbfReader, stop_points_only: bool) 
 pub fn write_stops_to_csv(stops: Vec<StopPoint>) {
     let csv_file = std::path::Path::new("/tmp/osm-transit-extractor_stops.csv");
     let mut wtr = csv::Writer::from_file(csv_file).unwrap();
+    wtr.encode(("id", "lat", "lon", "name")).unwrap();
 
     for sp in &stops {
         wtr.encode(sp).unwrap();
@@ -374,7 +376,8 @@ pub fn write_routes_to_csv(routes: Vec<Route>) {
     let csv_route_stops_file = std::path::Path::new("/tmp/osm-transit-extractor_route_stops.csv");
     let mut wtr_route = csv::Writer::from_file(csv_route_file).unwrap();
     let mut wtr_stops = csv::Writer::from_file(csv_route_stops_file).unwrap();
-    wtr_route.encode(("id",
+    wtr_stops.encode(("route_id", "stop_id")).unwrap();
+    wtr_route.encode(("route_id",
                  "name",
                  "code",
                  "destination",
