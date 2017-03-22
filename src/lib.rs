@@ -167,7 +167,29 @@ fn is_line(obj: &osmpbfreader::OsmObj) -> bool {
 }
 
 fn is_route(obj: &osmpbfreader::OsmObj) -> bool {
-    obj.relation().and_then(|r| r.tags.get("type")).map_or(false, |v| v == "route")
+    let route_type_that_are_not_pt = vec!["bicycle",
+                                          "canoe",
+                                          "detour",
+                                          "fitness_trail",
+                                          "foot",
+                                          "hiking",
+                                          "horse",
+                                          "inline_skates",
+                                          "mtb",
+                                          "nordic_walking",
+                                          "pipeline",
+                                          "piste",
+                                          "power",
+                                          "proposed",
+                                          "road",
+                                          "running",
+                                          "ski",
+                                          "historic"];
+
+    obj.relation().and_then(|r| r.tags.get("type")).map_or(false, |v| v == "route") &&
+    obj.relation().and_then(|r| r.tags.get("route")).map_or(false, |v| {
+        !route_type_that_are_not_pt.contains(&v.as_str())
+    })
 }
 
 fn get_one_coord_from_way(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
