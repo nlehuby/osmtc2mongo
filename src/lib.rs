@@ -447,24 +447,23 @@ pub fn write_stops_to_csv(stops: Vec<StopPoint>) {
             }
         }
     }
-    let csv_cols = vec!["id", "lat", "lon", "name"];
-    let mut csv_str = csv_cols.join(",");
-    csv_str = csv_str + ",osm:" + &osm_tag_list.join(",osm:");
-    let v: Vec<_> = csv_str.split(",").collect();
+    let osm_header = osm_tag_list.iter().map(|s| format!("osm:{}", s));
+    let v: Vec<_> = ["id", "lat", "lon", "name"]
+        .iter()
+        .map(|s| s.to_string())
+        .chain(osm_header)
+        .collect();
     wtr.encode(v).unwrap();
 
     for sp in &stops {
-        let mut csv_row = vec![sp.id.to_string(),
-                               sp.coord.lat.to_string(),
-                               sp.coord.lon.to_string(),
-                               sp.name.to_string()];
-        for tag in &osm_tag_list {
-            if sp.all_osm_tags.contains_key(tag) {
-                csv_row.push(sp.all_osm_tags[tag].to_string());
-            } else {
-                csv_row.push("".to_string());
-            }
-        }
+        let csv_row = vec![sp.id.to_string(),
+                           sp.coord.lat.to_string(),
+                           sp.coord.lon.to_string(),
+                           sp.name.to_string()];
+        let csv_row: Vec<_> = csv_row.into_iter()
+            .chain(osm_tag_list.iter()
+                .map(|k| sp.all_osm_tags.get(k).map_or("", |s| s.as_str()).to_string()))
+            .collect();
         wtr.encode(csv_row).unwrap();
     }
 }
