@@ -147,6 +147,37 @@ impl Encodable for Route {
         })
     }
 }
+impl Encodable for Line {
+    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
+        s.emit_struct("Line", 4, |s| {
+            try!(s.emit_struct_field("id", 0, |s| s.emit_str(&self.id)));
+            try!(s.emit_struct_field("name", 1, |s| s.emit_str(&self.name)));
+            try!(s.emit_struct_field("code", 2, |s| s.emit_str(&self.code)));
+            try!(s.emit_struct_field("operator", 2, |s| s.emit_str(&self.operator)));
+            try!(s.emit_struct_field("network", 2, |s| s.emit_str(&self.network)));
+            try!(s.emit_struct_field("mode", 2, |s| s.emit_str(&self.mode)));
+            try!(s.emit_struct_field("colour", 2, |s| s.emit_str(&self.colour)));
+            try!(s.emit_struct_field("shape", 3, |s| if self.shape.len() == 0 {
+                s.emit_str(&"")
+            } else {
+                let linestring: String = self.shape
+                    .iter()
+                    .map(|vec_coord| {
+                        vec_coord.iter()
+                            .map(|coord| {
+                                     format!("{} {}", coord.lon.to_string(), coord.lat.to_string())
+                                 })
+                            .collect::<Vec<String>>()
+                            .join(", ")
+                    })
+                    .collect::<Vec<String>>()
+                    .join("), (");
+                s.emit_str(&format!("MULTILINESTRING(({}))", linestring))
+            }));
+            Ok(())
+        })
+    }
+}
 
 pub struct OsmTcResponse {
     pub stop_points: Vec<StopPoint>,
@@ -244,6 +275,16 @@ fn osm_route_to_shape(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmO
         .filter_map(|osm_way| Some(osm_way_to_vec(obj_map, osm_way)))
         .collect()
 }
+fn osm_line_to_shape(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
+                     osm_relations_ref: &Vec<osmpbfreader::Ref>)
+                     -> Vec<Vec<Coord>> {
+
+    osm_relations_ref.iter()
+        .filter_map(|refe| obj_map.get(&refe.member))
+        .filter_map(|osm_obj| osmpbfreader::OsmObj::relation(osm_obj))
+        .flat_map(|relation| osm_route_to_shape(obj_map, relation))
+        .collect()
+}
 
 fn osm_route_to_stop_list(osm_relation: &osmpbfreader::Relation) -> Vec<String> {
     let stop_roles = vec!["stop",
@@ -321,6 +362,8 @@ fn osm_obj_to_route(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj
 fn osm_obj_to_line(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
                    obj: &osmpbfreader::OsmObj)
                    -> Option<Line> {
+
+
     obj.relation().map(|rel| {
         Line {
             id: format!("Line:Relation:{}", rel.id.0),
@@ -348,7 +391,7 @@ fn osm_obj_to_line(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>
                 .get("network")
                 .cloned()
                 .unwrap_or_default(),
-            shape: osm_route_to_shape(obj_map, rel),
+            shape: osm_line_to_shape(obj_map, &rel.refs),
             routes_id: osm_line_to_routes_list(rel),
         }
     })
@@ -483,15 +526,15 @@ pub fn write_routes_to_csv(routes: Vec<Route>) {
 pub fn write_lines_to_csv(lines: Vec<Line>) {
     let lines_csv_file = std::path::Path::new("/tmp/osm-transit-extractor_lines.csv");
     let mut lines_wtr = csv::Writer::from_file(lines_csv_file).unwrap();
-    lines_wtr.encode(("id", "name", "code", "operator", "network", "mode", "colour")).unwrap();
+    lines_wtr.encode(("id", "name", "code", "operator", "network", "mode", "colour", "shape"))
+        .unwrap();
 
     let csv_file = std::path::Path::new("/tmp/osm-transit-extractor_line_routes.csv");
     let mut wtr = csv::Writer::from_file(csv_file).unwrap();
     wtr.encode(("parent_relation_id", "member_id")).unwrap();
 
     for l in &lines {
-        lines_wtr.encode((&l.id, &l.name, &l.code, &l.operator, &l.network, &l.mode, &l.colour))
-            .unwrap();
+        lines_wtr.encode(l).unwrap();
         for r in &l.routes_id {
             wtr.encode((&l.id, &r)).unwrap();
         }
