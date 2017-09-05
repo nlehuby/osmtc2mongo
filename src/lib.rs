@@ -36,7 +36,7 @@ use std::collections::BTreeMap;
 use osmpbfreader::OsmObj::*;
 use rustc_serialize::Encodable;
 use rustc_serialize::Encoder;
-use std::collections::HashMap;
+use std::collections::btree_set::BTreeSet;
 
 pub type OsmPbfReader = osmpbfreader::OsmPbfReader<std::fs::File>;
 
@@ -54,12 +54,12 @@ impl Coord {
     }
 }
 
-#[derive(RustcEncodable, RustcDecodable, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct StopPoint {
     pub id: String,
     pub coord: Coord,
     pub name: String,
-    pub all_osm_tags: HashMap<String, String>,
+    pub all_osm_tags: osmpbfreader::objects::Tags,
 }
 
 #[derive(Debug, Clone)]
@@ -354,14 +354,6 @@ fn osm_obj_to_line(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>
     })
 }
 
-fn osm_tags_to_hashmap(obj: &osmpbfreader::OsmObj) -> HashMap<String, String> {
-    let mut map = HashMap::new();
-    for (key, value) in obj.tags().iter() {
-        map.insert(key.to_string(), value.to_string());
-    }
-    map
-}
-
 fn osm_obj_to_stop_point(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
                          obj: &osmpbfreader::OsmObj)
                          -> StopPoint {
@@ -382,7 +374,7 @@ fn osm_obj_to_stop_point(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::O
         .cloned()
         .unwrap_or_default();
     let id = format!("StopPoint:{}:{}", obj_type, obj_id);
-    let osm_tags = osm_tags_to_hashmap(obj);
+    let osm_tags = obj.tags().clone();
     StopPoint {
         id: id,
         name: name,
@@ -438,15 +430,8 @@ pub fn get_osm_tcobjects(parsed_pbf: &mut OsmPbfReader, stop_points_only: bool) 
 pub fn write_stops_to_csv(stops: Vec<StopPoint>) {
     let csv_file = std::path::Path::new("/tmp/osm-transit-extractor_stops.csv");
     let mut wtr = csv::Writer::from_file(csv_file).unwrap();
-
-    let mut osm_tag_list: Vec<String> = Vec::new();
-    for sp in &stops {
-        for (k, _) in &sp.all_osm_tags {
-            if osm_tag_list.iter().position(|item| *item.to_string() == k.to_string()).is_none() {
-                osm_tag_list.push(k.to_owned());
-            }
-        }
-    }
+    let osm_tag_list: BTreeSet<String> =
+        stops.iter().flat_map(|s| s.all_osm_tags.keys().map(|s| s.to_string())).collect();
     let osm_header = osm_tag_list.iter().map(|s| format!("osm:{}", s));
     let v: Vec<_> = ["id", "lat", "lon", "name"]
         .iter()
