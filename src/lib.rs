@@ -36,6 +36,7 @@ use std::collections::BTreeMap;
 use osmpbfreader::OsmObj::*;
 use rustc_serialize::Encodable;
 use rustc_serialize::Encoder;
+use std::collections::btree_set::BTreeSet;
 
 pub type OsmPbfReader = osmpbfreader::OsmPbfReader<std::fs::File>;
 
@@ -53,11 +54,12 @@ impl Coord {
     }
 }
 
-#[derive(RustcEncodable, RustcDecodable, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct StopPoint {
     pub id: String,
     pub coord: Coord,
     pub name: String,
+    pub all_osm_tags: osmpbfreader::objects::Tags,
 }
 
 #[derive(Debug, Clone)]
@@ -132,8 +134,8 @@ impl Encodable for Route {
                     .map(|vec_coord| {
                         vec_coord.iter()
                             .map(|coord| {
-                                     format!("{} {}", coord.lon.to_string(), coord.lat.to_string())
-                                 })
+                                format!("{} {}", coord.lon.to_string(), coord.lat.to_string())
+                            })
                             .collect::<Vec<String>>()
                             .join(", ")
                     })
@@ -187,9 +189,9 @@ fn is_route(obj: &osmpbfreader::OsmObj) -> bool {
                                           "historic"];
 
     obj.relation().and_then(|r| r.tags.get("type")).map_or(false, |v| v == "route") &&
-    obj.relation().and_then(|r| r.tags.get("route")).map_or(false, |v| {
-        !route_type_that_are_not_pt.contains(&v.as_str())
-    })
+    obj.relation()
+        .and_then(|r| r.tags.get("route"))
+        .map_or(false, |v| !route_type_that_are_not_pt.contains(&v.as_str()))
 }
 
 fn get_one_coord_from_way(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
@@ -198,10 +200,10 @@ fn get_one_coord_from_way(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::
     way.nodes
         .iter()
         .filter_map(|node_id| {
-                        obj_map.get(&(*node_id).into())
+            obj_map.get(&(*node_id).into())
                 .and_then(|obj| obj.node())
                 .map(|node| Coord::new(node.lat(), node.lon()))
-                    })
+        })
         .next()
         .unwrap_or(Coord::new(0., 0.))
 }
@@ -213,10 +215,10 @@ fn get_one_coord_from_rel(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::
         .iter()
         .filter_map(|refe| obj_map.get(&refe.member))
         .filter_map(|osm_obj| match *osm_obj {
-                        Way(ref way) => Some(get_one_coord_from_way(obj_map, way)),
-                        Node(ref node) => Some(Coord::new(node.lat(), node.lon())),
-                        Relation(..) => None,
-                    })
+            Way(ref way) => Some(get_one_coord_from_way(obj_map, way)),
+            Node(ref node) => Some(Coord::new(node.lat(), node.lon())),
+            Relation(..) => None,
+        })
         .next()
         .unwrap_or(Coord::new(0., 0.))
 }
@@ -255,12 +257,10 @@ fn osm_route_to_stop_list(osm_relation: &osmpbfreader::Relation) -> Vec<String> 
         .iter()
         .filter(|refe| stop_roles.contains(&refe.role.as_str()))
         .map(|refe| match refe.member {
-                 osmpbfreader::OsmId::Node(obj_id) => format!("StopPoint:Node:{}", obj_id.0),
-                 osmpbfreader::OsmId::Way(obj_id) => format!("StopPoint:Way:{}", obj_id.0),
-                 osmpbfreader::OsmId::Relation(obj_id) => {
-                     format!("StopPoint:Relation:{}", obj_id.0)
-                 }
-             })
+            osmpbfreader::OsmId::Node(obj_id) => format!("StopPoint:Node:{}", obj_id.0),
+            osmpbfreader::OsmId::Way(obj_id) => format!("StopPoint:Way:{}", obj_id.0),
+            osmpbfreader::OsmId::Relation(obj_id) => format!("StopPoint:Relation:{}", obj_id.0),
+        })
         .collect()
 }
 
@@ -268,11 +268,9 @@ fn osm_line_to_routes_list(route_master: &osmpbfreader::Relation) -> Vec<String>
     route_master.refs
         .iter()
         .filter_map(|refe| match refe.member {
-                        osmpbfreader::OsmId::Relation(rel_id) => {
-                            Some(format!("Route:Relation:{}", rel_id.0))
-                        }
-                        _ => None,
-                    })
+            osmpbfreader::OsmId::Relation(rel_id) => Some(format!("Route:Relation:{}", rel_id.0)),
+            _ => None,
+        })
         .collect()
 }
 
@@ -356,7 +354,6 @@ fn osm_obj_to_line(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>
     })
 }
 
-
 fn osm_obj_to_stop_point(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
                          obj: &osmpbfreader::OsmObj)
                          -> StopPoint {
@@ -377,10 +374,12 @@ fn osm_obj_to_stop_point(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::O
         .cloned()
         .unwrap_or_default();
     let id = format!("StopPoint:{}:{}", obj_type, obj_id);
+    let osm_tags = obj.tags().clone();
     StopPoint {
         id: id,
         name: name,
         coord: coord,
+        all_osm_tags: osm_tags,
     }
 }
 
@@ -431,10 +430,26 @@ pub fn get_osm_tcobjects(parsed_pbf: &mut OsmPbfReader, stop_points_only: bool) 
 pub fn write_stops_to_csv(stops: Vec<StopPoint>) {
     let csv_file = std::path::Path::new("/tmp/osm-transit-extractor_stops.csv");
     let mut wtr = csv::Writer::from_file(csv_file).unwrap();
-    wtr.encode(("id", "lat", "lon", "name")).unwrap();
+    let osm_tag_list: BTreeSet<String> =
+        stops.iter().flat_map(|s| s.all_osm_tags.keys().map(|s| s.to_string())).collect();
+    let osm_header = osm_tag_list.iter().map(|s| format!("osm:{}", s));
+    let v: Vec<_> = ["id", "lat", "lon", "name"]
+        .iter()
+        .map(|s| s.to_string())
+        .chain(osm_header)
+        .collect();
+    wtr.encode(v).unwrap();
 
     for sp in &stops {
-        wtr.encode(sp).unwrap();
+        let csv_row = vec![sp.id.to_string(),
+                           sp.coord.lat.to_string(),
+                           sp.coord.lon.to_string(),
+                           sp.name.to_string()];
+        let csv_row: Vec<_> = csv_row.into_iter()
+            .chain(osm_tag_list.iter()
+                .map(|k| sp.all_osm_tags.get(k).map_or("", |s| s.as_str()).to_string()))
+            .collect();
+        wtr.encode(csv_row).unwrap();
     }
 }
 
@@ -445,21 +460,21 @@ pub fn write_routes_to_csv(routes: Vec<Route>) {
     let mut wtr_stops = csv::Writer::from_file(csv_route_stops_file).unwrap();
     wtr_stops.encode(("route_id", "stop_id")).unwrap();
     wtr_route.encode(("route_id",
-                      "name",
-                      "code",
-                      "destination",
-                      "origin",
-                      "mode",
-                      "colour",
-                      "operator",
-                      "network",
-                      "shape"))
+                 "name",
+                 "code",
+                 "destination",
+                 "origin",
+                 "mode",
+                 "colour",
+                 "operator",
+                 "network",
+                 "shape"))
         .unwrap();
 
     for r in &routes {
         for s in &r.ordered_stops_id {
             let row = vec![r.id.to_string(), s.to_string()];
-            wtr_stops.write(row.into_iter());
+            wtr_stops.write(row.into_iter()).unwrap();
         }
         wtr_route.encode(r).unwrap();
     }
