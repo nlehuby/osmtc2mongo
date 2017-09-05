@@ -5,7 +5,7 @@ authors = ["Pascal Rhod <pascal.rhod@canaltp.fr>", "Noémie Lehuby <noemie.lehub
 
 [dependencies]
 csv = "1.0.0-beta.4"
-osmpbfreader = "0.9"
+osmpbfreader = "0.11.1"
 wkt = "0.0.6"
 serde = "1.0.12"
 serde_derive = "1.0.12"
