@@ -29,18 +29,19 @@
 // www.navitia.io
 
 extern crate osmpbfreader;
-extern crate rustc_serialize;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 extern crate csv;
 extern crate wkt;
 use std::collections::BTreeMap;
 use osmpbfreader::OsmObj::*;
-use rustc_serialize::Encodable;
-use rustc_serialize::Encoder;
+use serde::Serializer;
 use std::collections::btree_set::BTreeSet;
 
 pub type OsmPbfReader = osmpbfreader::OsmPbfReader<std::fs::File>;
 
-#[derive(RustcEncodable, RustcDecodable, Debug, Clone)]
+#[derive(Serialize, Debug, Clone)]
 pub struct Coord {
     lat: f64,
     lon: f64,
@@ -62,7 +63,7 @@ pub struct StopPoint {
     pub all_osm_tags: osmpbfreader::objects::Tags,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Debug, Clone)]
 pub struct Route {
     pub id: String,
     pub name: String,
@@ -73,11 +74,13 @@ pub struct Route {
     pub operator: String,
     pub network: String,
     pub mode: String,
+    #[serde(skip)]
     pub ordered_stops_id: Vec<String>,
+    #[serde(serialize_with = "shape_to_wkt")]
     pub shape: Vec<Vec<Coord>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Debug, Clone)]
 pub struct Line {
     pub id: String,
     pub name: String,
@@ -86,7 +89,9 @@ pub struct Line {
     pub operator: String,
     pub network: String,
     pub mode: String,
+    #[serde(serialize_with = "shape_to_wkt")]
     pub shape: Vec<Vec<Coord>>,
+    #[serde(skip)]
     pub routes_id: Vec<String>,
 }
 
@@ -114,37 +119,23 @@ impl Route {
     }
 }
 
-impl Encodable for Route {
-    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-        s.emit_struct("Route", 4, |s| {
-            try!(s.emit_struct_field("id", 0, |s| s.emit_str(&self.id)));
-            try!(s.emit_struct_field("name", 1, |s| s.emit_str(&self.name)));
-            try!(s.emit_struct_field("code", 2, |s| s.emit_str(&self.code)));
-            try!(s.emit_struct_field("destination", 2, |s| s.emit_str(&self.destination)));
-            try!(s.emit_struct_field("origin", 2, |s| s.emit_str(&self.origin)));
-            try!(s.emit_struct_field("mode", 2, |s| s.emit_str(&self.mode)));
-            try!(s.emit_struct_field("colour", 2, |s| s.emit_str(&self.colour)));
-            try!(s.emit_struct_field("operator", 2, |s| s.emit_str(&self.operator)));
-            try!(s.emit_struct_field("network", 2, |s| s.emit_str(&self.network)));
-            try!(s.emit_struct_field("shape", 3, |s| if self.shape.len() == 0 {
-                s.emit_str(&"")
-            } else {
-                let linestring: String = self.shape
-                    .iter()
-                    .map(|vec_coord| {
-                        vec_coord.iter()
-                            .map(|coord| {
-                                format!("{} {}", coord.lon.to_string(), coord.lat.to_string())
-                            })
-                            .collect::<Vec<String>>()
-                            .join(", ")
-                    })
+
+fn shape_to_wkt<S>(shape: &Vec<Vec<Coord>>, serializer: S) -> Result<S::Ok, S::Error>
+    where S: Serializer
+{
+    if shape.len() == 0 {
+        serializer.serialize_none()
+    } else {
+        let linestring: String = shape.iter()
+            .map(|vec_coord| {
+                vec_coord.iter()
+                    .map(|coord| format!("{} {}", coord.lon.to_string(), coord.lat.to_string()))
                     .collect::<Vec<String>>()
-                    .join("), (");
-                s.emit_str(&format!("MULTILINESTRING(({}))", linestring))
-            }));
-            Ok(())
-        })
+                    .join(", ")
+            })
+            .collect::<Vec<String>>()
+            .join("), (");
+        serializer.serialize_str(&format!("MULTILINESTRING(({}))", linestring))
     }
 }
 
@@ -245,6 +236,17 @@ fn osm_route_to_shape(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmO
         .collect()
 }
 
+fn osm_line_to_shape(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
+                     osm_relations_ref: &Vec<osmpbfreader::Ref>)
+                     -> Vec<Vec<Coord>> {
+
+    osm_relations_ref.iter()
+        .filter_map(|refe| obj_map.get(&refe.member))
+        .filter_map(|osm_obj| osmpbfreader::OsmObj::relation(osm_obj))
+        .flat_map(|relation| osm_route_to_shape(obj_map, relation))
+        .collect()
+}
+
 fn osm_route_to_stop_list(osm_relation: &osmpbfreader::Relation) -> Vec<String> {
     let stop_roles = vec!["stop",
                           "platform",
@@ -321,6 +323,8 @@ fn osm_obj_to_route(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj
 fn osm_obj_to_line(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
                    obj: &osmpbfreader::OsmObj)
                    -> Option<Line> {
+
+
     obj.relation().map(|rel| {
         Line {
             id: format!("Line:Relation:{}", rel.id.0),
@@ -348,7 +352,7 @@ fn osm_obj_to_line(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>
                 .get("network")
                 .cloned()
                 .unwrap_or_default(),
-            shape: osm_route_to_shape(obj_map, rel),
+            shape: osm_line_to_shape(obj_map, &rel.refs),
             routes_id: osm_line_to_routes_list(rel),
         }
     })
@@ -429,7 +433,7 @@ pub fn get_osm_tcobjects(parsed_pbf: &mut OsmPbfReader, stop_points_only: bool) 
 
 pub fn write_stops_to_csv(stops: Vec<StopPoint>) {
     let csv_file = std::path::Path::new("/tmp/osm-transit-extractor_stops.csv");
-    let mut wtr = csv::Writer::from_file(csv_file).unwrap();
+    let mut wtr = csv::Writer::from_path(csv_file).unwrap();
     let osm_tag_list: BTreeSet<String> =
         stops.iter().flat_map(|s| s.all_osm_tags.keys().map(|s| s.to_string())).collect();
     let osm_header = osm_tag_list.iter().map(|s| format!("osm:{}", s));
@@ -438,7 +442,7 @@ pub fn write_stops_to_csv(stops: Vec<StopPoint>) {
         .map(|s| s.to_string())
         .chain(osm_header)
         .collect();
-    wtr.encode(v).unwrap();
+    wtr.serialize(v).unwrap();
 
     for sp in &stops {
         let csv_row = vec![sp.id.to_string(),
@@ -449,51 +453,51 @@ pub fn write_stops_to_csv(stops: Vec<StopPoint>) {
             .chain(osm_tag_list.iter()
                 .map(|k| sp.all_osm_tags.get(k).map_or("", |s| s.as_str()).to_string()))
             .collect();
-        wtr.encode(csv_row).unwrap();
+        wtr.serialize(csv_row).unwrap();
     }
 }
 
 pub fn write_routes_to_csv(routes: Vec<Route>) {
     let csv_route_file = std::path::Path::new("/tmp/osm-transit-extractor_routes.csv");
     let csv_route_stops_file = std::path::Path::new("/tmp/osm-transit-extractor_route_stops.csv");
-    let mut wtr_route = csv::Writer::from_file(csv_route_file).unwrap();
-    let mut wtr_stops = csv::Writer::from_file(csv_route_stops_file).unwrap();
-    wtr_stops.encode(("route_id", "stop_id")).unwrap();
-    wtr_route.encode(("route_id",
-                 "name",
-                 "code",
-                 "destination",
-                 "origin",
-                 "mode",
-                 "colour",
-                 "operator",
-                 "network",
-                 "shape"))
+    let mut wtr_route = csv::Writer::from_path(csv_route_file).unwrap();
+    let mut wtr_stops = csv::Writer::from_path(csv_route_stops_file).unwrap();
+    wtr_stops.serialize(("route_id", "stop_id")).unwrap();
+    wtr_route.serialize(("route_id",
+                    "name",
+                    "code",
+                    "destination",
+                    "origin",
+                    "mode",
+                    "colour",
+                    "operator",
+                    "network",
+                    "shape"))
         .unwrap();
 
     for r in &routes {
         for s in &r.ordered_stops_id {
             let row = vec![r.id.to_string(), s.to_string()];
-            wtr_stops.write(row.into_iter()).unwrap();
+            wtr_stops.write_record(row.into_iter()).unwrap();
         }
-        wtr_route.encode(r).unwrap();
+        wtr_route.serialize(r).unwrap();
     }
 }
 
 pub fn write_lines_to_csv(lines: Vec<Line>) {
     let lines_csv_file = std::path::Path::new("/tmp/osm-transit-extractor_lines.csv");
-    let mut lines_wtr = csv::Writer::from_file(lines_csv_file).unwrap();
-    lines_wtr.encode(("id", "name", "code", "operator", "network", "mode", "colour")).unwrap();
+    let mut lines_wtr = csv::Writer::from_path(lines_csv_file).unwrap();
+    lines_wtr.serialize(("id", "name", "code", "operator", "network", "mode", "colour", "shape"))
+        .unwrap();
 
     let csv_file = std::path::Path::new("/tmp/osm-transit-extractor_line_routes.csv");
-    let mut wtr = csv::Writer::from_file(csv_file).unwrap();
-    wtr.encode(("parent_relation_id", "member_id")).unwrap();
+    let mut wtr = csv::Writer::from_path(csv_file).unwrap();
+    wtr.serialize(("parent_relation_id", "member_id")).unwrap();
 
     for l in &lines {
-        lines_wtr.encode((&l.id, &l.name, &l.code, &l.operator, &l.network, &l.mode, &l.colour))
-            .unwrap();
+        lines_wtr.serialize(l).unwrap();
         for r in &l.routes_id {
-            wtr.encode((&l.id, &r)).unwrap();
+            wtr.serialize((&l.id, &r)).unwrap();
         }
     }
 }

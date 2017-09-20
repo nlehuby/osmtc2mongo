@@ -29,7 +29,6 @@
 // www.navitia.io
 
 extern crate osmpbfreader;
-extern crate rustc_serialize;
 extern crate osm_transit_extractor;
 extern crate structopt;
 
