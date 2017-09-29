@@ -437,7 +437,7 @@ pub fn write_stops_to_csv(stops: Vec<StopPoint>) {
     let osm_tag_list: BTreeSet<String> =
         stops.iter().flat_map(|s| s.all_osm_tags.keys().map(|s| s.to_string())).collect();
     let osm_header = osm_tag_list.iter().map(|s| format!("osm:{}", s));
-    let v: Vec<_> = ["id", "lat", "lon", "name"]
+    let v: Vec<_> = ["stop_id", "lat", "lon", "name"]
         .iter()
         .map(|s| s.to_string())
         .chain(osm_header)
@@ -468,10 +468,10 @@ pub fn write_routes_to_csv(routes: Vec<Route>) {
                     "code",
                     "destination",
                     "origin",
-                    "mode",
                     "colour",
                     "operator",
                     "network",
+                    "mode",
                     "shape"))
         .unwrap();
 
@@ -487,12 +487,19 @@ pub fn write_routes_to_csv(routes: Vec<Route>) {
 pub fn write_lines_to_csv(lines: Vec<Line>) {
     let lines_csv_file = std::path::Path::new("/tmp/osm-transit-extractor_lines.csv");
     let mut lines_wtr = csv::Writer::from_path(lines_csv_file).unwrap();
-    lines_wtr.serialize(("id", "name", "code", "operator", "network", "mode", "colour", "shape"))
+    lines_wtr.serialize(("line_id",
+                    "name",
+                    "code",
+                    "colour",
+                    "operator",
+                    "network",
+                    "mode",
+                    "shape"))
         .unwrap();
 
     let csv_file = std::path::Path::new("/tmp/osm-transit-extractor_line_routes.csv");
     let mut wtr = csv::Writer::from_path(csv_file).unwrap();
-    wtr.serialize(("parent_relation_id", "member_id")).unwrap();
+    wtr.serialize(("line_id", "route_id")).unwrap();
 
     for l in &lines {
         lines_wtr.serialize(l).unwrap();
