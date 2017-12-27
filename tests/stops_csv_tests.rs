@@ -61,7 +61,7 @@ pub fn osm_fixture_stops_csv() {
     let osm_path = std::env::current_dir().unwrap().join("tests/fixtures/osm_fixture.osm.pbf");
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
     let stops = osm_transit_extractor::get_stops_from_osm(&mut parsed_pbf);
-    osm_transit_extractor::write_stops_to_csv(stops);
+    osm_transit_extractor::write_stops_to_csv(stops, std::path::Path::new("/tmp/").to_path_buf());
 }
 
 #[test]
@@ -69,7 +69,7 @@ pub fn osm_fixture_routes_csv() {
     let osm_path = std::env::current_dir().unwrap().join("tests/fixtures/osm_fixture.osm.pbf");
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
     let routes = osm_transit_extractor::get_routes_from_osm(&mut parsed_pbf);
-    osm_transit_extractor::write_routes_to_csv(routes);
+    osm_transit_extractor::write_routes_to_csv(routes, std::path::Path::new("/tmp/").to_path_buf());
 }
 
 #[test]
@@ -77,5 +77,5 @@ pub fn osm_fixture_lines_csv() {
     let osm_path = std::env::current_dir().unwrap().join("tests/fixtures/osm_fixture.osm.pbf");
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
     let lines = osm_transit_extractor::get_lines_from_osm(&mut parsed_pbf);
-    osm_transit_extractor::write_lines_to_csv(lines);
+    osm_transit_extractor::write_lines_to_csv(lines, std::path::Path::new("/tmp/").to_path_buf());
 }
