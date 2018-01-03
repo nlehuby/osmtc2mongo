@@ -35,8 +35,8 @@ extern crate structopt;
 #[macro_use]
 extern crate structopt_derive;
 use structopt::StructOpt;
-
 use osm_transit_extractor::*;
+use std::path::PathBuf;
 
 #[derive(StructOpt)]
 struct Args {
@@ -47,30 +47,25 @@ struct Args {
                 help = "Imports only stop_points (default is a full extraction)")]
     import_stop_points_only: bool,
 
-    #[structopt(long = "output", short = "o", default_value = "",
+    #[structopt(long = "output", short = "o", default_value = ".", parse(from_os_str),
                 help = "Output directory, can be relative (default is current dir)")]
-    output: String,
+    output: PathBuf,
 }
 
 fn main() {
     let args = Args::from_args();
 
-    let mut output_dir = std::env::current_dir().unwrap();
-    if args.output != "" {
-        output_dir.push(args.output)
-    }
-
     let mut parsed_pbf = parse_osm_pbf(&args.input);
 
     let osmtc_response = get_osm_tcobjects(&mut parsed_pbf, args.import_stop_points_only);
 
-    write_stops_to_csv(osmtc_response.stop_points, output_dir.clone());
+    write_stops_to_csv(osmtc_response.stop_points, &args.output);
 
     if osmtc_response.routes.is_some() {
-        write_routes_to_csv(osmtc_response.routes.unwrap(), output_dir.clone());
+        write_routes_to_csv(osmtc_response.routes.unwrap(), &args.output);
     }
     if osmtc_response.lines.is_some() {
-        write_lines_to_csv(osmtc_response.lines.unwrap(), output_dir);
+        write_lines_to_csv(osmtc_response.lines.unwrap(), &args.output);
     }
     println!("end of osm-transit-extractor !")
 }

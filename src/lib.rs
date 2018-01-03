@@ -35,6 +35,7 @@ extern crate serde_derive;
 extern crate csv;
 extern crate wkt;
 use std::collections::BTreeMap;
+use std::path::Path;
 use osmpbfreader::OsmObj::*;
 use serde::Serializer;
 use std::collections::btree_set::BTreeSet;
@@ -431,7 +432,8 @@ pub fn get_osm_tcobjects(parsed_pbf: &mut OsmPbfReader, stop_points_only: bool) 
 }
 
 
-pub fn write_stops_to_csv(stops: Vec<StopPoint>, output_dir: std::path::PathBuf) {
+pub fn write_stops_to_csv<P: AsRef<Path>>(stops: Vec<StopPoint>, output_dir: P) {
+    let output_dir = output_dir.as_ref();
     let csv_file = output_dir.join("osm-transit-extractor_stops.csv");
 
     let mut wtr = csv::Writer::from_path(csv_file).unwrap();
@@ -458,7 +460,8 @@ pub fn write_stops_to_csv(stops: Vec<StopPoint>, output_dir: std::path::PathBuf)
     }
 }
 
-pub fn write_routes_to_csv(routes: Vec<Route>, output_dir: std::path::PathBuf) {
+pub fn write_routes_to_csv<P: AsRef<Path>>(routes: Vec<Route>, output_dir: P) {
+    let output_dir = output_dir.as_ref();
     let csv_route_file = output_dir.join("osm-transit-extractor_routes.csv");
     let csv_route_stops_file = output_dir.join("osm-transit-extractor_route_stops.csv");
     let mut wtr_route = csv::Writer::from_path(csv_route_file).unwrap();
@@ -485,7 +488,8 @@ pub fn write_routes_to_csv(routes: Vec<Route>, output_dir: std::path::PathBuf) {
     }
 }
 
-pub fn write_lines_to_csv(lines: Vec<Line>, output_dir: std::path::PathBuf) {
+pub fn write_lines_to_csv<P: AsRef<Path>>(lines: Vec<Line>, output_dir: P) {
+    let output_dir = output_dir.as_ref();
     let lines_csv_file = output_dir.join("osm-transit-extractor_lines.csv");
     let mut lines_wtr = csv::Writer::from_path(lines_csv_file).unwrap();
     lines_wtr.serialize(("line_id",
