@@ -43,9 +43,9 @@ struct Args {
     #[structopt(long = "input", short = "i", help = "OSM PBF file")]
     input: String,
 
-    #[structopt(long = "import-stop-points-only", short = "s",
-                help = "Imports only stop_points (default is a full extraction)")]
-    import_stop_points_only: bool,
+    #[structopt(long = "import-stops-only", short = "s",
+                help = "Imports only stop_points and stop_areas (default is a full extraction)")]
+    import_stops_only: bool,
 
     #[structopt(long = "output", short = "o", default_value = ".", parse(from_os_str),
                 help = "Output directory, can be relative (default is current dir)")]
@@ -57,9 +57,10 @@ fn main() {
 
     let mut parsed_pbf = parse_osm_pbf(&args.input);
 
-    let osmtc_response = get_osm_tcobjects(&mut parsed_pbf, args.import_stop_points_only);
+    let osmtc_response = get_osm_tcobjects(&mut parsed_pbf, args.import_stops_only);
 
-    write_stops_to_csv(osmtc_response.stop_points, &args.output);
+    write_stop_points_to_csv(osmtc_response.stop_points, &args.output);
+    write_stop_areas_to_csv(osmtc_response.stop_areas, &args.output);
 
     if osmtc_response.routes.is_some() {
         write_routes_to_csv(osmtc_response.routes.unwrap(), &args.output);

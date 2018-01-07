@@ -5,10 +5,10 @@ use tempdir::TempDir;
 
 
 #[test]
-pub fn osm_fixture_stops_count() {
+pub fn osm_fixture_stoppoints_count() {
     let osm_path = std::env::current_dir().unwrap().join("tests/fixtures/osm_fixture.osm.pbf");
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
-    let stops = osm_transit_extractor::get_stops_from_osm(&mut parsed_pbf);
+    let stops = osm_transit_extractor::get_stop_points_from_osm(&mut parsed_pbf);
     assert!(stops.len() == 64)
 }
 
@@ -59,10 +59,10 @@ pub fn osm_fixture_lines_tags() {
 }
 
 #[test]
-pub fn osm_fixture_stops_csv() {
+pub fn osm_fixture_stoppoints_csv() {
     let osm_path = std::env::current_dir().unwrap().join("tests/fixtures/osm_fixture.osm.pbf");
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
-    let stops = osm_transit_extractor::get_stops_from_osm(&mut parsed_pbf);
+    let stops = osm_transit_extractor::get_stop_points_from_osm(&mut parsed_pbf);
     let tmp_dir = TempDir::new("osm_transit_extractor").expect("create temp dir");
     osm_transit_extractor::write_stops_to_csv(stops, &tmp_dir);
     tmp_dir.close().expect("delete temp dir");
