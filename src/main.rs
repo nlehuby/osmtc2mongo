@@ -59,8 +59,8 @@ fn main() {
 
     let osmtc_response = get_osm_tcobjects(&mut parsed_pbf, args.import_stops_only);
 
-    write_stop_points_to_csv(osmtc_response.stop_points, &args.output);
-    write_stop_areas_to_csv(osmtc_response.stop_areas, &args.output);
+    write_stop_points_to_csv(&osmtc_response.stop_points, &osmtc_response.stop_areas, &args.output);
+    write_stop_areas_to_csv(&osmtc_response.stop_areas, &args.output);
 
     if osmtc_response.routes.is_some() {
         write_routes_to_csv(osmtc_response.routes.unwrap(), &args.output);

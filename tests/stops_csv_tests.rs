@@ -64,7 +64,7 @@ pub fn osm_fixture_stoppoints_csv() {
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
     let stops = osm_transit_extractor::get_stop_points_from_osm(&mut parsed_pbf);
     let tmp_dir = TempDir::new("osm_transit_extractor").expect("create temp dir");
-    osm_transit_extractor::write_stops_to_csv(stops, &tmp_dir);
+    osm_transit_extractor::write_stop_points_to_csv(&stops, &vec![], &tmp_dir);
     tmp_dir.close().expect("delete temp dir");
 }
 

@@ -70,7 +70,7 @@ pub struct StopArea {
     pub coord: Coord,
     pub name: String,
     pub all_osm_tags: osmpbfreader::objects::Tags,
-    pub stop_points_id: Vec<String>,
+    pub stop_point_ids: Vec<String>,
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -439,7 +439,7 @@ fn osm_obj_to_stop_area(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::Os
         name: name,
         coord: coord,
         all_osm_tags: osm_tags,
-        stop_points_id: osm_stop_area_to_stop_point_list(rel),
+        stop_point_ids: osm_stop_area_to_stop_point_list(rel),
     }
 }
 
@@ -510,7 +510,18 @@ pub fn get_osm_tcobjects(parsed_pbf: &mut OsmPbfReader, stops_only: bool) -> Osm
 }
 
 
-pub fn write_stop_points_to_csv<P: AsRef<Path>>(stop_points: Vec<StopPoint>, output_dir: P) {
+fn get_stop_area_ids_for_stop_point(stop_point_id: &String,
+                                    stop_areas: &Vec<StopArea>)
+                                    -> Vec<String> {
+    stop_areas.iter()
+              .filter(|sa| sa.stop_point_ids.contains(stop_point_id))
+              .map(|sa| sa.id.to_string())
+              .collect()
+}
+
+pub fn write_stop_points_to_csv<P: AsRef<Path>>(stop_points: &Vec<StopPoint>,
+                                                stop_areas: &Vec<StopArea>,
+                                                output_dir: P) {
     let output_dir = output_dir.as_ref();
     let csv_file = output_dir.join("osm-transit-extractor_stop_points.csv");
 
@@ -518,18 +529,21 @@ pub fn write_stop_points_to_csv<P: AsRef<Path>>(stop_points: Vec<StopPoint>, out
     let osm_tag_list: BTreeSet<String> =
         stop_points.iter().flat_map(|s| s.all_osm_tags.keys().map(|s| s.to_string())).collect();
     let osm_header = osm_tag_list.iter().map(|s| format!("osm:{}", s));
-    let v: Vec<_> = ["stop_point_id", "lat", "lon", "name"]
+    let v: Vec<_> = ["stop_point_id", "lat", "lon", "name", "fist_stop_area_id"]
         .iter()
         .map(|s| s.to_string())
         .chain(osm_header)
         .collect();
     wtr.serialize(v).unwrap();
 
-    for sp in &stop_points {
+    for sp in stop_points {
+        let stop_area_ids = get_stop_area_ids_for_stop_point(&sp.id, &stop_areas);
         let csv_row = vec![sp.id.to_string(),
                            sp.coord.lat.to_string(),
                            sp.coord.lon.to_string(),
-                           sp.name.to_string()];
+                           sp.name.to_string(),
+                           stop_area_ids.iter().next().unwrap_or(&"".to_string()).to_string(),
+                           ];
         let csv_row: Vec<_> = csv_row.into_iter()
             .chain(osm_tag_list.iter()
                 .map(|k| sp.all_osm_tags.get(k).map_or("", |s| s.as_str()).to_string()))
@@ -538,7 +552,7 @@ pub fn write_stop_points_to_csv<P: AsRef<Path>>(stop_points: Vec<StopPoint>, out
     }
 }
 
-pub fn write_stop_areas_to_csv<P: AsRef<Path>>(stop_areas: Vec<StopArea>, output_dir: P) {
+pub fn write_stop_areas_to_csv<P: AsRef<Path>>(stop_areas: &Vec<StopArea>, output_dir: P) {
     let output_dir = output_dir.as_ref();
     let csv_file = output_dir.join("osm-transit-extractor_stop_areas.csv");
 
@@ -553,7 +567,7 @@ pub fn write_stop_areas_to_csv<P: AsRef<Path>>(stop_areas: Vec<StopArea>, output
         .collect();
     wtr.serialize(v).unwrap();
 
-    for sa in &stop_areas {
+    for sa in stop_areas {
         let csv_row = vec![sa.id.to_string(),
                            sa.coord.lat.to_string(),
                            sa.coord.lon.to_string(),
