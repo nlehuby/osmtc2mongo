@@ -202,6 +202,8 @@ fn is_pt_route_type(route_type: Option<&String>) -> bool {
         "ferry",
         "coach",
         "aerialway",
+        "funicular",
+        "rail",
     ];
     match route_type {
         Some(r) => pt_route_type.contains(&r.as_str()),
