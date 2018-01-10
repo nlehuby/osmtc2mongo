@@ -37,6 +37,10 @@ extern crate structopt_derive;
 use structopt::StructOpt;
 use osm_transit_extractor::*;
 use std::path::PathBuf;
+#[macro_use]
+extern crate log;
+extern crate simple_logger;
+
 
 #[derive(StructOpt)]
 struct Args {
@@ -53,7 +57,11 @@ struct Args {
 }
 
 fn main() {
+    simple_logger::init().unwrap();
+    info!("Launching the process !");
+
     let args = Args::from_args();
+
 
     let mut parsed_pbf = parse_osm_pbf(&args.input);
 
@@ -68,5 +76,5 @@ fn main() {
     if osmtc_response.lines.is_some() {
         write_lines_to_csv(osmtc_response.lines.unwrap(), &args.output);
     }
-    println!("end of osm-transit-extractor !")
+    info!("end of osm-transit-extractor !")
 }

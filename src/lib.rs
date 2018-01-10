@@ -39,6 +39,8 @@ use std::path::Path;
 use osmpbfreader::OsmObj::*;
 use serde::Serializer;
 use std::collections::btree_set::BTreeSet;
+#[macro_use]
+extern crate log;
 
 pub type OsmPbfReader = osmpbfreader::OsmPbfReader<std::fs::File>;
 
@@ -170,57 +172,71 @@ fn is_stop_area(obj: &osmpbfreader::OsmObj) -> bool {
     obj.is_relation() && obj.tags().contains("public_transport", "stop_area")
 }
 
-fn is_pt_route_type(route_type: Option<&String>) -> bool {
-    // let non_pt_route_type = vec!["bicycle",
-    //                               "canoe",
-    //                               "detour",
-    //                               "fitness_trail",
-    //                               "foot",
-    //                               "hiking",
-    //                               "horse",
-    //                               "inline_skates",
-    //                               "mtb",
-    //                               "nordic_walking",
-    //                               "pipeline",
-    //                               "piste",
-    //                               "power",
-    //                               "proposed",
-    //                               "road",
-    //                               "running",
-    //                               "ski",
-    //                               "historic",
-    //                               "path"];
-    let pt_route_type = vec![
-        "trolleybus",
-        "bus",
-        "train",
-        "subway",
-        "light_rail",
-        "monorail",
-        "tram",
-        "railway",
-        "ferry",
-        "coach",
-        "aerialway",
-        "funicular",
-        "rail",
-    ];
+fn is_pt_route_type(osm_id: osmpbfreader::objects::RelationId,
+                    tag_name: &str,
+                    route_type: Option<&String>) -> bool {
+    let non_pt_route_type = vec!["bicycle",
+                                  "canoe",
+                                  "detour",
+                                  "fitness_trail",
+                                  "foot",
+                                  "hiking",
+                                  "horse",
+                                  "inline_skates",
+                                  "mtb",
+                                  "nordic_walking",
+                                  "pipeline",
+                                  "piste",
+                                  "power",
+                                  "proposed",
+                                  "road",
+                                  "running",
+                                  "ski",
+                                  "historic",
+                                  "path",
+                            ];
+    let pt_route_type = vec!["trolleybus",
+                             "bus",
+                             "train",
+                             "subway",
+                             "light_rail",
+                             "monorail",
+                             "tram",
+                             "railway",
+                             "ferry",
+                             "coach",
+                             "aerialway",
+                             "funicular",
+                             "rail",
+                        ];
     match route_type {
-        Some(r) => pt_route_type.contains(&r.as_str()),
-        None => false
+        Some(r) => {
+            let is_in_white_list = pt_route_type.contains(&r.as_str());
+            let is_in_black_list = non_pt_route_type.contains(&r.as_str());
+            if !is_in_white_list && !is_in_black_list{
+                warn!("tag {} is unknown : relation {} is extracted. Update mode list in crate to remove this message.", tag_name, osm_id.0);
+            }
+            !is_in_black_list
+        },
+        None => {
+             warn!("tag {} is empty : relation {} is ignored", tag_name, osm_id.0);
+            false
+        },
     }
 }
 
 fn is_line(obj: &osmpbfreader::OsmObj) -> bool {
+    let route_type = "route_master";
     obj.is_relation() &&
-        obj.tags().contains("type", "route_master") &&
-        is_pt_route_type(obj.tags().get("route_master"))
+        obj.tags().contains("type", route_type) &&
+        is_pt_route_type(obj.id().relation().unwrap(), route_type, obj.tags().get(route_type))
 }
 
 fn is_route(obj: &osmpbfreader::OsmObj) -> bool {
+    let route_type = "route";
     obj.is_relation() &&
-        obj.tags().contains("type", "route") &&
-        is_pt_route_type(obj.tags().get("route"))
+        obj.tags().contains("type", route_type) &&
+        is_pt_route_type(obj.id().relation().unwrap(), route_type, obj.tags().get(route_type))
 }
 
 fn get_one_coord_from_way(obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
