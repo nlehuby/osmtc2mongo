@@ -3745,4 +3745,10 @@
     <tag k='route_master' v='bus' />
     <tag k='type' v='route_master' />
   </relation>
+  <relation id='123' timestamp='2016-12-15T17:48:41Z' uid='1424448' user='nlehuby' visible='true' version='6' changeset='44429167'>
+    <member type='node' ref='2807062370' role='stop' />
+    <tag k='name' v='test with wrong type' />
+    <tag k='route' v='bus_with_wrong_type' />
+    <tag k='type' v='route' />
+  </relation>
 </osm>
