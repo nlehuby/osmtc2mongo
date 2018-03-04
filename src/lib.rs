@@ -189,6 +189,8 @@ fn is_pt_route_type(
         "ski",
         "historic",
         "path",
+        "junction",
+        "tracks",
     ];
     let pt_route_type = vec![
         "trolleybus",
@@ -204,6 +206,7 @@ fn is_pt_route_type(
         "aerialway",
         "funicular",
         "rail",
+        "share_taxi",
     ];
     match route_type {
         Some(r) => {
