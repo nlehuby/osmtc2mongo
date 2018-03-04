@@ -530,7 +530,7 @@ pub fn write_stop_points_to_csv<P: AsRef<Path>>(
         .flat_map(|s| s.all_osm_tags.keys().map(|s| s.to_string()))
         .collect();
     let osm_header = osm_tag_list.iter().map(|s| format!("osm:{}", s));
-    let v: Vec<_> = ["stop_point_id", "lat", "lon", "name", "fist_stop_area_id"]
+    let v: Vec<_> = ["stop_point_id", "lat", "lon", "name", "first_stop_area_id"]
         .iter()
         .map(|s| s.to_string())
         .chain(osm_header)
