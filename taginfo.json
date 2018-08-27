@@ -1,0 +1,72 @@
+{
+    "data_format": 1,
+    "project": {
+        "name": "osm_transit_extractor",
+        "description": "Extract public transport data from OSM and write it to CSV files",
+        "project_url": "https://github.com/CanalTP/osm-transit-extractor",
+        "contact_name": "Pascal Rhod",
+        "contact_email": "pascal.rhod@kisio.com"
+    },
+    "tags": [{
+            "key": "type",
+            "value": "route_master",
+            "object_types": ["relation"],
+            "description": "to filter the public transport line objects"
+        },
+        {
+            "key": "type",
+            "value": "route",
+            "object_types": ["relation"],
+            "description": "to filter the public transport route objects"
+        },
+        {
+            "key": "ref",
+            "object_types": ["relation"],
+            "description": "the code of the public transport line/route"
+        },
+        {
+            "key": "to",
+            "object_types": ["relation"],
+            "description": "the destination of the public transport route"
+        },
+        {
+            "key": "from",
+            "object_types": ["relation"],
+            "description": "the origin of the public transport route"
+        },
+        {
+            "key": "colour",
+            "object_types": ["relation"],
+            "description": "the colour of the public transport line/route"
+        },
+        {
+            "key": "operator",
+            "object_types": ["relation"],
+            "description": "the name of the public transport operator"
+        },
+        {
+            "key": "network",
+            "object_types": ["relation"],
+            "description": "the name of the public transport network"
+        },
+        {
+            "key": "route",
+            "object_types": ["relation"],
+            "description": "the public transport mode of the route"
+        },
+        {
+            "key": "route_master",
+            "object_types": ["relation"],
+            "description": "the public transport mode of the line"
+        },
+        {
+            "key": "highway",
+            "value": "bus_stop"
+        },
+        {
+            "key": "public_transport",
+            "value": "stop_area",
+            "object_types": ["relation"],
+        }
+    ]
+}
