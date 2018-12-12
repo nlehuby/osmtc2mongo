@@ -42,8 +42,8 @@ pub type OsmPbfReader = osmpbfreader::OsmPbfReader<std::fs::File>;
 
 #[derive(Debug, Clone)]
 pub struct Coord {
-    lat: f64,
-    lon: f64,
+    pub lat: f64,
+    pub lon: f64,
 }
 impl Coord {
     fn new(lat_param: f64, lon_param: f64) -> Coord {
@@ -332,9 +332,9 @@ fn osm_route_to_stop_list(osm_relation: &osmpbfreader::Relation) -> Vec<String> 
         .iter()
         .filter(|refe| stop_roles.contains(&refe.role.as_str()))
         .map(|refe| match refe.member {
-            osmpbfreader::OsmId::Node(obj_id) => format!("StopPoint:Node:{}", obj_id.0),
-            osmpbfreader::OsmId::Way(obj_id) => format!("StopPoint:Way:{}", obj_id.0),
-            osmpbfreader::OsmId::Relation(obj_id) => format!("StopPoint:Relation:{}", obj_id.0),
+            osmpbfreader::OsmId::Node(obj_id) => format!("node:{}", obj_id.0),
+            osmpbfreader::OsmId::Way(obj_id) => format!("way:{}", obj_id.0),
+            osmpbfreader::OsmId::Relation(obj_id) => format!("relation:{}", obj_id.0),
         })
         .collect()
 }
@@ -395,10 +395,10 @@ fn osm_obj_to_stop_point(
     obj: &osmpbfreader::OsmObj,
 ) -> StopPoint {
     let (obj_type, obj_id, coord) = match *obj {
-        Relation(ref rel) => ("Relation", rel.id.0, get_one_coord_from_rel(obj_map, rel)),
-        Way(ref way) => ("Way", way.id.0, get_one_coord_from_way(obj_map, way)),
+        Relation(ref rel) => ("relation", rel.id.0, get_one_coord_from_rel(obj_map, rel)),
+        Way(ref way) => ("way", way.id.0, get_one_coord_from_way(obj_map, way)),
         Node(ref node) => (
-            "Node",
+            "node",
             node.id.0,
             Coord {
                 lat: node.lat(),
@@ -407,12 +407,12 @@ fn osm_obj_to_stop_point(
         ),
     };
     let name = obj.tags().get("name").cloned().unwrap_or_default();
-    let id = format!("StopPoint:{}:{}", obj_type, obj_id);
+    let id = format!("{}:{}", obj_type, obj_id);
     let osm_tags = obj.tags().clone();
     StopPoint {
-        id: id,
-        name: name,
-        coord: coord,
+        id,
+        name,
+        coord,
         all_osm_tags: osm_tags,
     }
 }
@@ -427,8 +427,8 @@ fn osm_obj_to_stop_area(
     let osm_tags = obj.tags().clone();
     StopArea {
         id: format!("StopArea:{}:{}", obj_type, obj_id),
-        name: name,
-        coord: coord,
+        name,
+        coord,
         all_osm_tags: osm_tags,
         stop_point_ids: osm_stop_area_to_stop_point_list(rel),
     }
@@ -488,8 +488,8 @@ pub fn get_osm_tcobjects(parsed_pbf: &mut OsmPbfReader, stops_only: bool) -> Osm
     let stop_areas = get_stop_areas_from_osm(parsed_pbf);
     if stops_only {
         OsmTcResponse {
-            stop_points: stop_points,
-            stop_areas: stop_areas,
+            stop_points,
+            stop_areas,
             routes: None,
             lines: None,
         }
@@ -497,8 +497,8 @@ pub fn get_osm_tcobjects(parsed_pbf: &mut OsmPbfReader, stops_only: bool) -> Osm
         let routes = get_routes_from_osm(parsed_pbf);
         let lines = get_lines_from_osm(parsed_pbf);
         OsmTcResponse {
-            stop_points: stop_points,
-            stop_areas: stop_areas,
+            stop_points,
+            stop_areas,
             routes: Some(routes),
             lines: Some(lines),
         }
@@ -540,7 +540,7 @@ pub fn write_stop_points_to_csv<P: AsRef<Path>>(
     for sp in stop_points {
         let stop_area_ids = get_stop_area_ids_for_stop_point(&sp.id, &stop_areas);
         let csv_row = vec![
-            sp.id.to_string(),
+            format!("StopPoint:{}", sp.id),
             sp.coord.lat.to_string(),
             sp.coord.lon.to_string(),
             sp.name.to_string(),
@@ -654,7 +654,7 @@ pub fn write_routes_to_csv<P: AsRef<Path>>(routes: Vec<Route>, output_dir: P) {
 
         //writing the route/stop csv
         for s in &r.ordered_stops_id {
-            let row = vec![r.id.to_string(), s.to_string()];
+            let row = vec![r.id.to_string(), format!("StopPoint:{}", s)];
             wtr_stops.write_record(row.into_iter()).unwrap();
         }
     }
