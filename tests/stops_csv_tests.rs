@@ -20,7 +20,7 @@ pub fn osm_fixture_routes_count() {
     let routes = osm_transit_extractor::get_routes_from_osm(&mut parsed_pbf);
     assert_eq!(routes.len(), 3);
     for r in routes {
-        if r.id == "Route:Relation:1257168" {
+        if r.id == "relation:1257168" {
             assert_eq!(r.ordered_stops_id.len(), 34);
             assert_eq!(r.ordered_stops_id[0], "node:3270784465");
             assert_eq!(r.ordered_stops_id[30], "node:1577028157");
@@ -44,7 +44,7 @@ pub fn osm_fixture_routes_tags() {
     let routes = osm_transit_extractor::get_routes_from_osm(&mut parsed_pbf);
     for r in routes {
         match r.id.as_ref() {
-            "Route:Relation:1257168" => {
+            "relation:1257168" => {
                 assert_eq!(r.colour, format!(""));
                 assert_eq!(r.operator, format!("RATP"));
                 assert_eq!(r.network, format!("RATP"));
@@ -52,7 +52,7 @@ pub fn osm_fixture_routes_tags() {
                 assert_eq!(r.code, format!("57"));
                 assert_eq!(r.origin, format!("Arcueil - Laplace"));
             },
-            "Route:Relation:1257174" => {
+            "relation:1257174" => {
                 assert_eq!(r.destination, format!("Arcueil - Laplace"));
             },
             _ => {},
