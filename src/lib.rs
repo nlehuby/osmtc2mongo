@@ -31,10 +31,10 @@
 extern crate csv;
 extern crate osmpbfreader;
 extern crate wkt;
-use std::collections::BTreeMap;
-use std::path::Path;
 use osmpbfreader::OsmObj::*;
 use std::collections::btree_set::BTreeSet;
+use std::collections::BTreeMap;
+use std::path::Path;
 #[macro_use]
 extern crate log;
 
@@ -105,7 +105,8 @@ pub struct Line {
 /* to_multilinestring is to be used when issue #8 is resolved*/
 impl Route {
     fn to_multilinestring(&self) -> wkt::types::MultiLineString {
-        let wkt_linestrings = self.shape
+        let wkt_linestrings = self
+            .shape
             .iter()
             .map(|vec_coord| {
                 vec_coord
@@ -229,7 +230,8 @@ fn is_pt_route_type(
 
 fn is_line(obj: &osmpbfreader::OsmObj) -> bool {
     let route_type = "route_master";
-    obj.is_relation() && obj.tags().contains("type", route_type)
+    obj.is_relation()
+        && obj.tags().contains("type", route_type)
         && is_pt_route_type(
             obj.id().relation().unwrap(),
             route_type,
@@ -239,7 +241,8 @@ fn is_line(obj: &osmpbfreader::OsmObj) -> bool {
 
 fn is_route(obj: &osmpbfreader::OsmObj) -> bool {
     let route_type = "route";
-    obj.is_relation() && obj.tags().contains("type", route_type)
+    obj.is_relation()
+        && obj.tags().contains("type", route_type)
         && is_pt_route_type(
             obj.id().relation().unwrap(),
             route_type,
@@ -622,10 +625,11 @@ pub fn write_routes_to_csv<P: AsRef<Path>>(routes: Vec<Route>, output_dir: P) {
         "network",
         "mode",
         "shape",
-    ].iter()
-        .map(|s| s.to_string())
-        .chain(osm_header)
-        .collect();
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .chain(osm_header)
+    .collect();
     wtr_route.serialize(v).unwrap();
 
     for r in &routes {
@@ -670,11 +674,12 @@ pub fn write_lines_to_csv<P: AsRef<Path>>(lines: Vec<Line>, output_dir: P) {
         .collect();
     let osm_header = osm_tag_list.iter().map(|s| format!("osm:{}", s));
     let v: Vec<_> = [
-        "line_id", "name", "code", "colour", "operator", "network", "mode", "shape"
-    ].iter()
-        .map(|s| s.to_string())
-        .chain(osm_header)
-        .collect();
+        "line_id", "name", "code", "colour", "operator", "network", "mode", "shape",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .chain(osm_header)
+    .collect();
     lines_wtr.serialize(v).unwrap();
 
     let csv_file = output_dir.join("osm-transit-extractor_line_routes.csv");
@@ -705,7 +710,8 @@ pub fn write_lines_to_csv<P: AsRef<Path>>(lines: Vec<Line>, output_dir: P) {
 
         //Writing line-route csv file
         for r in &l.routes_id {
-            wtr.serialize((format!("Line:{}", &l.id), format!("Route:{}", &r))).unwrap();
+            wtr.serialize((format!("Line:{}", &l.id), format!("Route:{}", &r)))
+                .unwrap();
         }
     }
 }

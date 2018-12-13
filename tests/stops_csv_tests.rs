@@ -3,10 +3,11 @@ extern crate osmpbfreader;
 extern crate tempdir;
 use tempdir::TempDir;
 
-
 #[test]
 pub fn osm_fixture_stoppoints() {
-    let osm_path = std::env::current_dir().unwrap().join("tests/fixtures/osm_fixture.osm.pbf");
+    let osm_path = std::env::current_dir()
+        .unwrap()
+        .join("tests/fixtures/osm_fixture.osm.pbf");
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
     let stops = osm_transit_extractor::get_stop_points_from_osm(&mut parsed_pbf);
     assert_eq!(stops[0].id, "node:260743996");
@@ -15,7 +16,9 @@ pub fn osm_fixture_stoppoints() {
 
 #[test]
 pub fn osm_fixture_routes_count() {
-    let osm_path = std::env::current_dir().unwrap().join("tests/fixtures/osm_fixture.osm.pbf");
+    let osm_path = std::env::current_dir()
+        .unwrap()
+        .join("tests/fixtures/osm_fixture.osm.pbf");
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
     let routes = osm_transit_extractor::get_routes_from_osm(&mut parsed_pbf);
     assert_eq!(routes.len(), 3);
@@ -30,7 +33,9 @@ pub fn osm_fixture_routes_count() {
 
 #[test]
 pub fn osm_fixture_lines_count() {
-    let osm_path = std::env::current_dir().unwrap().join("tests/fixtures/osm_fixture.osm.pbf");
+    let osm_path = std::env::current_dir()
+        .unwrap()
+        .join("tests/fixtures/osm_fixture.osm.pbf");
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
     let lines = osm_transit_extractor::get_lines_from_osm(&mut parsed_pbf);
     assert_eq!(lines.len(), 1);
@@ -39,7 +44,9 @@ pub fn osm_fixture_lines_count() {
 
 #[test]
 pub fn osm_fixture_routes_tags() {
-    let osm_path = std::env::current_dir().unwrap().join("tests/fixtures/osm_fixture.osm.pbf");
+    let osm_path = std::env::current_dir()
+        .unwrap()
+        .join("tests/fixtures/osm_fixture.osm.pbf");
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
     let routes = osm_transit_extractor::get_routes_from_osm(&mut parsed_pbf);
     for r in routes {
@@ -51,18 +58,20 @@ pub fn osm_fixture_routes_tags() {
                 assert_eq!(r.mode, format!("bus"));
                 assert_eq!(r.code, format!("57"));
                 assert_eq!(r.origin, format!("Arcueil - Laplace"));
-            },
+            }
             "relation:1257174" => {
                 assert_eq!(r.destination, format!("Arcueil - Laplace"));
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 }
 
 #[test]
 pub fn osm_fixture_lines_tags() {
-    let osm_path = std::env::current_dir().unwrap().join("tests/fixtures/osm_fixture.osm.pbf");
+    let osm_path = std::env::current_dir()
+        .unwrap()
+        .join("tests/fixtures/osm_fixture.osm.pbf");
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
     let lines = osm_transit_extractor::get_lines_from_osm(&mut parsed_pbf);
     assert_eq!(lines[0].colour, format!("#9C983A"));
@@ -74,7 +83,9 @@ pub fn osm_fixture_lines_tags() {
 
 #[test]
 pub fn osm_fixture_stoppoints_csv() {
-    let osm_path = std::env::current_dir().unwrap().join("tests/fixtures/osm_fixture.osm.pbf");
+    let osm_path = std::env::current_dir()
+        .unwrap()
+        .join("tests/fixtures/osm_fixture.osm.pbf");
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
     let stops = osm_transit_extractor::get_stop_points_from_osm(&mut parsed_pbf);
     let tmp_dir = TempDir::new("osm_transit_extractor").expect("create temp dir");
@@ -84,7 +95,9 @@ pub fn osm_fixture_stoppoints_csv() {
 
 #[test]
 pub fn osm_fixture_routes_csv() {
-    let osm_path = std::env::current_dir().unwrap().join("tests/fixtures/osm_fixture.osm.pbf");
+    let osm_path = std::env::current_dir()
+        .unwrap()
+        .join("tests/fixtures/osm_fixture.osm.pbf");
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
     let routes = osm_transit_extractor::get_routes_from_osm(&mut parsed_pbf);
     let tmp_dir = TempDir::new("osm_transit_extractor").expect("create temp dir");
@@ -94,7 +107,9 @@ pub fn osm_fixture_routes_csv() {
 
 #[test]
 pub fn osm_fixture_lines_csv() {
-    let osm_path = std::env::current_dir().unwrap().join("tests/fixtures/osm_fixture.osm.pbf");
+    let osm_path = std::env::current_dir()
+        .unwrap()
+        .join("tests/fixtures/osm_fixture.osm.pbf");
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
     let lines = osm_transit_extractor::get_lines_from_osm(&mut parsed_pbf);
     let tmp_dir = TempDir::new("osm_transit_extractor").expect("create temp dir");
