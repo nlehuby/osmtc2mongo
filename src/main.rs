@@ -28,31 +28,38 @@
 // https://groups.google.com/d/forum/navitia
 // www.navitia.io
 
-extern crate osmpbfreader;
 extern crate osm_transit_extractor;
+extern crate osmpbfreader;
 extern crate structopt;
 
 #[macro_use]
 extern crate structopt_derive;
-use structopt::StructOpt;
 use osm_transit_extractor::*;
 use std::path::PathBuf;
+use structopt::StructOpt;
 #[macro_use]
 extern crate log;
 extern crate simple_logger;
-
 
 #[derive(StructOpt)]
 struct Args {
     #[structopt(long = "input", short = "i", help = "OSM PBF file")]
     input: String,
 
-    #[structopt(long = "import-stops-only", short = "s",
-                help = "Imports only stop_points and stop_areas (default is a full extraction)")]
+    #[structopt(
+        long = "import-stops-only",
+        short = "s",
+        help = "Imports only stop_points and stop_areas (default is a full extraction)"
+    )]
     import_stops_only: bool,
 
-    #[structopt(long = "output", short = "o", default_value = ".", parse(from_os_str),
-                help = "Output directory, can be relative (default is current dir)")]
+    #[structopt(
+        long = "output",
+        short = "o",
+        default_value = ".",
+        parse(from_os_str),
+        help = "Output directory, can be relative (default is current dir)"
+    )]
     output: PathBuf,
 }
 
@@ -62,12 +69,15 @@ fn main() {
 
     let args = Args::from_args();
 
-
     let mut parsed_pbf = parse_osm_pbf(&args.input);
 
     let osmtc_response = get_osm_tcobjects(&mut parsed_pbf, args.import_stops_only);
 
-    write_stop_points_to_csv(&osmtc_response.stop_points, &osmtc_response.stop_areas, &args.output);
+    write_stop_points_to_csv(
+        &osmtc_response.stop_points,
+        &osmtc_response.stop_areas,
+        &args.output,
+    );
     write_stop_areas_to_csv(&osmtc_response.stop_areas, &args.output);
 
     if osmtc_response.routes.is_some() {
