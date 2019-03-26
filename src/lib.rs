@@ -29,8 +29,10 @@
 // www.navitia.io
 
 extern crate csv;
+extern crate geo_types;
 extern crate osmpbfreader;
 extern crate wkt;
+use geo_types::{LineString, MultiLineString};
 use osmpbfreader::OsmObj::*;
 use std::collections::btree_set::BTreeSet;
 use std::collections::BTreeMap;
@@ -39,6 +41,30 @@ use std::path::Path;
 extern crate log;
 
 pub type OsmPbfReader = osmpbfreader::OsmPbfReader<std::fs::File>;
+
+pub trait Id<T> {
+    fn id(&self) -> &str;
+}
+
+pub trait Shape {
+    fn get_shape(&self) -> &Vec<Vec<Coord>>;
+}
+
+pub fn shape_to_multi_line_string<T>(container: &T) -> MultiLineString<f64>
+where
+    T: Shape,
+{
+    container
+        .get_shape()
+        .iter()
+        .map(|way_coords| {
+            way_coords
+                .iter()
+                .map(|coord| (coord.lon, coord.lat))
+                .collect::<LineString<f64>>()
+        })
+        .collect::<MultiLineString<f64>>()
+}
 
 #[derive(Debug, Clone)]
 pub struct Coord {
@@ -87,6 +113,18 @@ pub struct Route {
     pub shape: Vec<Vec<Coord>>,
 }
 
+impl Id<Route> for Route {
+    fn id(&self) -> &str {
+        self.id.as_str()
+    }
+}
+
+impl Shape for Route {
+    fn get_shape(&self) -> &Vec<Vec<Coord>> {
+        &self.shape
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Line {
     pub id: String,
@@ -99,6 +137,18 @@ pub struct Line {
     pub all_osm_tags: osmpbfreader::objects::Tags,
     pub shape: Vec<Vec<Coord>>,
     pub routes_id: Vec<String>,
+}
+
+impl Id<Line> for Line {
+    fn id(&self) -> &str {
+        self.id.as_str()
+    }
+}
+
+impl Shape for Line {
+    fn get_shape(&self) -> &Vec<Vec<Coord>> {
+        &self.shape
+    }
 }
 
 #[allow(dead_code)]
