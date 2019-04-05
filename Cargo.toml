@@ -1,6 +1,6 @@
 [package]
 name = "osm_transit_extractor"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Pascal Rhod <pascal.rhod@canaltp.fr>", "Noémie Lehuby <noemie.lehuby@canaltp.fr>"]
 
 [dependencies]
