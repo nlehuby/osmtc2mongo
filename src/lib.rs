@@ -354,7 +354,13 @@ fn osm_route_to_shape(
         .iter()
         .filter_map(|refe| obj_map.get(&refe.member))
         .filter_map(|osm_obj| osmpbfreader::OsmObj::way(osm_obj))
-        .filter_map(|osm_way| Some(osm_way_to_vec(obj_map, osm_way)))
+        .filter_map(|osm_way| {
+            let coord_vec = osm_way_to_vec(obj_map, osm_way);
+            match coord_vec.len() {
+                0 | 1 => None,
+                _ => Some(coord_vec),
+            }
+        })
         .collect()
 }
 
