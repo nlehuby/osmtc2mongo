@@ -86,7 +86,7 @@ pub fn osm_fixture_stoppoints_csv() {
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
     let stops = osm_transit_extractor::get_stop_points_from_osm(&mut parsed_pbf);
     let tmp_dir = TempDir::new("osm_transit_extractor").expect("create temp dir");
-    osm_transit_extractor::write_stop_points_to_csv(&stops, &vec![], &tmp_dir);
+    osm_transit_extractor::write_stop_points_to_csv(&stops, &vec![], &tmp_dir, false);
     tmp_dir.close().expect("delete temp dir");
 }
 
@@ -98,7 +98,7 @@ pub fn osm_fixture_routes_csv() {
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
     let routes = osm_transit_extractor::get_routes_from_osm(&mut parsed_pbf);
     let tmp_dir = TempDir::new("osm_transit_extractor").expect("create temp dir");
-    osm_transit_extractor::write_routes_to_csv(routes, &tmp_dir);
+    osm_transit_extractor::write_routes_to_csv(routes, &tmp_dir, true);
     tmp_dir.close().expect("delete temp dir");
 }
 
@@ -110,6 +110,6 @@ pub fn osm_fixture_lines_csv() {
     let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
     let lines = osm_transit_extractor::get_lines_from_osm(&mut parsed_pbf);
     let tmp_dir = TempDir::new("osm_transit_extractor").expect("create temp dir");
-    osm_transit_extractor::write_lines_to_csv(lines, &tmp_dir);
+    osm_transit_extractor::write_lines_to_csv(lines, &tmp_dir, false);
     tmp_dir.close().expect("delete temp dir");
 }
