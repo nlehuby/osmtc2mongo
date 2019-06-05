@@ -28,18 +28,10 @@
 // https://groups.google.com/d/forum/navitia
 // www.navitia.io
 
-extern crate osm_transit_extractor;
-extern crate osmpbfreader;
-extern crate structopt;
-
-#[macro_use]
-extern crate structopt_derive;
+use log::info;
 use osm_transit_extractor::*;
 use std::path::PathBuf;
 use structopt::StructOpt;
-#[macro_use]
-extern crate log;
-extern crate simple_logger;
 
 #[derive(StructOpt)]
 struct Args {
