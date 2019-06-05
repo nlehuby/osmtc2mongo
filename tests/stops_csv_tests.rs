@@ -1,6 +1,3 @@
-extern crate osm_transit_extractor;
-extern crate osmpbfreader;
-extern crate tempdir;
 use tempdir::TempDir;
 
 #[test]

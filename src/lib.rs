@@ -28,17 +28,12 @@
 // https://groups.google.com/d/forum/navitia
 // www.navitia.io
 
-extern crate csv;
-extern crate geo_types;
-extern crate osmpbfreader;
-extern crate wkt;
 use geo_types::{LineString, MultiLineString};
+use log::warn;
 use osmpbfreader::OsmObj::*;
 use std::collections::btree_set::BTreeSet;
 use std::collections::BTreeMap;
 use std::path::Path;
-#[macro_use]
-extern crate log;
 
 pub type OsmPbfReader = osmpbfreader::OsmPbfReader<std::fs::File>;
 

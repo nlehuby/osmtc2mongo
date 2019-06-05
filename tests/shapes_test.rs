@@ -1,6 +1,3 @@
-extern crate osm_transit_extractor;
-extern crate osmpbfreader;
-
 #[test]
 pub fn osm_shapes_filter_way_with_only_one_existing_node() {
     let osm_path = std::env::current_dir()
