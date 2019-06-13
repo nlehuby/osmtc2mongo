@@ -46,6 +46,13 @@ struct Args {
     import_stops_only: bool,
 
     #[structopt(
+        long = "dump-all-tags",
+        short = "t",
+        help = "Extract all tags from OSM objects"
+    )]
+    dump_all_tags: bool,
+
+    #[structopt(
         long = "output",
         short = "o",
         default_value = ".",
@@ -69,14 +76,23 @@ fn main() {
         &osmtc_response.stop_points,
         &osmtc_response.stop_areas,
         &args.output,
+        args.dump_all_tags,
     );
-    write_stop_areas_to_csv(&osmtc_response.stop_areas, &args.output);
+    write_stop_areas_to_csv(&osmtc_response.stop_areas, &args.output, args.dump_all_tags);
 
     if osmtc_response.routes.is_some() {
-        write_routes_to_csv(osmtc_response.routes.unwrap(), &args.output);
+        write_routes_to_csv(
+            osmtc_response.routes.unwrap(),
+            &args.output,
+            args.dump_all_tags,
+        );
     }
     if osmtc_response.lines.is_some() {
-        write_lines_to_csv(osmtc_response.lines.unwrap(), &args.output);
+        write_lines_to_csv(
+            osmtc_response.lines.unwrap(),
+            &args.output,
+            args.dump_all_tags,
+        );
     }
     info!("end of osm-transit-extractor !")
 }
