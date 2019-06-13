@@ -599,7 +599,7 @@ pub fn write_stop_points_to_csv<P: AsRef<Path>>(
 
     for sp in stop_points {
         let stop_area_ids = get_stop_area_ids_for_stop_point(&sp.id, &stop_areas);
-        let csv_row = vec![
+        let mut csv_row = vec![
             format!("StopPoint:{}", sp.id),
             sp.coord.lat.to_string(),
             sp.coord.lon.to_string(),
@@ -611,7 +611,7 @@ pub fn write_stop_points_to_csv<P: AsRef<Path>>(
                 .to_string(),
         ];
         if all_tags {
-            let csv_row: Vec<_> = csv_row
+            csv_row = csv_row
                 .into_iter()
                 .chain(osm_tag_list.iter().map(|k| {
                     sp.all_osm_tags
@@ -620,10 +620,8 @@ pub fn write_stop_points_to_csv<P: AsRef<Path>>(
                         .to_string()
                 }))
                 .collect();
-            wtr.serialize(csv_row).unwrap();
-        } else {
-            wtr.serialize(csv_row).unwrap();
         }
+        wtr.serialize(csv_row).unwrap();
     }
 }
 
@@ -654,14 +652,14 @@ pub fn write_stop_areas_to_csv<P: AsRef<Path>>(
     }
 
     for sa in stop_areas {
-        let csv_row = vec![
+        let mut csv_row = vec![
             format!("StopArea:{}", sa.id),
             sa.coord.lat.to_string(),
             sa.coord.lon.to_string(),
             sa.name.to_string(),
         ];
         if all_tags {
-            let csv_row: Vec<_> = csv_row
+            csv_row = csv_row
                 .into_iter()
                 .chain(osm_tag_list.iter().map(|k| {
                     sa.all_osm_tags
@@ -670,10 +668,8 @@ pub fn write_stop_areas_to_csv<P: AsRef<Path>>(
                         .to_string()
                 }))
                 .collect();
-            wtr.serialize(csv_row).unwrap();
-        } else {
-            wtr.serialize(csv_row).unwrap();
         }
+        wtr.serialize(csv_row).unwrap();
     }
 }
 pub fn write_routes_to_csv<P: AsRef<Path>>(routes: Vec<Route>, output_dir: P, all_tags: bool) {
@@ -713,7 +709,7 @@ pub fn write_routes_to_csv<P: AsRef<Path>>(routes: Vec<Route>, output_dir: P, al
 
     for r in &routes {
         // writing route csv
-        let csv_row = vec![
+        let mut csv_row = vec![
             format!("Route:{}", r.id),
             r.name.to_string(),
             r.code.to_string(),
@@ -726,7 +722,7 @@ pub fn write_routes_to_csv<P: AsRef<Path>>(routes: Vec<Route>, output_dir: P, al
             shape_to_wkt(&r.shape),
         ];
         if all_tags {
-            let csv_row: Vec<_> = csv_row
+            csv_row = csv_row
                 .into_iter()
                 .chain(
                     osm_tag_list
@@ -734,10 +730,8 @@ pub fn write_routes_to_csv<P: AsRef<Path>>(routes: Vec<Route>, output_dir: P, al
                         .map(|k| r.all_osm_tags.get(k).map_or("", |s| s.as_str()).to_string()),
                 )
                 .collect();
-            wtr_route.serialize(csv_row).unwrap();
-        } else {
-            wtr_route.serialize(csv_row).unwrap();
         }
+        wtr_route.serialize(csv_row).unwrap();
 
         //writing the route/stop csv
         for s in &r.ordered_stops_id {
@@ -776,7 +770,7 @@ pub fn write_lines_to_csv<P: AsRef<Path>>(lines: Vec<Line>, output_dir: P, all_t
 
     for l in &lines {
         // writing lines csv
-        let csv_row = vec![
+        let mut csv_row = vec![
             format!("Line:{}", l.id),
             l.name.to_string(),
             l.code.to_string(),
@@ -787,7 +781,7 @@ pub fn write_lines_to_csv<P: AsRef<Path>>(lines: Vec<Line>, output_dir: P, all_t
             shape_to_wkt(&l.shape),
         ];
         if all_tags {
-            let csv_row: Vec<_> = csv_row
+            csv_row = csv_row
                 .into_iter()
                 .chain(
                     osm_tag_list
@@ -795,10 +789,8 @@ pub fn write_lines_to_csv<P: AsRef<Path>>(lines: Vec<Line>, output_dir: P, all_t
                         .map(|k| l.all_osm_tags.get(k).map_or("", |s| s.as_str()).to_string()),
                 )
                 .collect();
-            lines_wtr.serialize(csv_row).unwrap();
-        } else {
-            lines_wtr.serialize(csv_row).unwrap();
         }
+        lines_wtr.serialize(csv_row).unwrap();
 
         //Writing line-route csv file
         for r in &l.routes_id {
