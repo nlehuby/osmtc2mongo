@@ -1,0 +1,136 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm version='0.6' generator='JOSM'>
+  <node id='4212950363' timestamp='2016-05-28T20:07:13Z' uid='362997' user='Virgile1994' visible='true' version='1' changeset='39630962' lat='43.3001617' lon='5.3857015' />
+  <node id='4212953998' timestamp='2016-05-28T20:07:12Z' uid='362997' user='Virgile1994' visible='true' version='1' changeset='39630962' lat='43.2999614' lon='5.385264' />
+  <way id='421543482' timestamp='2016-05-28T20:07:33Z' uid='362997' user='Virgile1994' visible='true' version='1' changeset='39630962'>
+    <nd ref='4212950363' />
+    <nd ref='4212953998' />
+    <tag k='bench' v='yes' />
+    <tag k='level' v='0' />
+    <tag k='name' v='Réformés Canebière' />
+    <tag k='network' v='RTM' />
+    <tag k='operator' v='Régie des Transports Marseillais' />
+    <tag k='public_transport' v='platform' />
+    <tag k='railway' v='platform' />
+    <tag k='shelter' v='yes' />
+    <tag k='tram' v='yes' />
+    <tag k='wheelchair' v='yes' />
+  </way>
+  <relation id='165621' timestamp='2019-03-07T23:24:34Z' uid='1788169' user='Richardbla' visible='true' version='17' changeset='67903943'>
+    <member type='node' ref='1889730985' role='stop' />
+    <member type='way' ref='417386006' role='platform' />
+    <member type='node' ref='1889730988' role='stop' />
+    <member type='way' ref='422970540' role='platform' />
+    <member type='node' ref='1889730989' role='stop' />
+    <member type='way' ref='422970542' role='platform' />
+    <member type='node' ref='1889730986' role='stop' />
+    <member type='way' ref='422970536' role='platform' />
+    <member type='node' ref='1889730991' role='stop' />
+    <member type='way' ref='422970545' role='platform' />
+    <member type='node' ref='1889730992' role='stop' />
+    <member type='way' ref='422970548' role='platform' />
+    <member type='node' ref='1889730993' role='stop' />
+    <member type='way' ref='421543482' role='platform' />
+    <member type='node' ref='1920052964' role='stop' />
+    <member type='way' ref='419542809' role='platform' />
+    <member type='node' ref='3544780766' role='stop' />
+    <member type='way' ref='420899457' role='platform' />
+    <member type='node' ref='1889730984' role='stop' />
+    <member type='way' ref='228212474' role='platform' />
+    <member type='node' ref='1889721713' role='stop' />
+    <member type='way' ref='422504793' role='platform' />
+    <member type='node' ref='1889730994' role='stop' />
+    <member type='way' ref='422504788' role='platform' />
+    <member type='node' ref='1889730990' role='stop' />
+    <member type='way' ref='419952857' role='platform' />
+    <member type='node' ref='1889730987' role='stop' />
+    <member type='way' ref='422504751' role='platform' />
+    <member type='node' ref='1889721785' role='stop' />
+    <member type='way' ref='416557983' role='platform' />
+    <member type='way' ref='417386237' role='' />
+    <member type='way' ref='146436591' role='' />
+    <member type='way' ref='419547760' role='' />
+    <member type='way' ref='348347091' role='' />
+    <member type='way' ref='416557998' role='' />
+    <member type='node' ref='5729013971' role='' />
+    <tag k='audio_anouncement' v='yes' />
+    <tag k='bicycle' v='no' />
+    <tag k='by_night' v='no' />
+    <tag k='colour' v='#f5e615' />
+    <tag k='evening' v='yes' />
+    <tag k='frequence' v='frequent' />
+    <tag k='from' v='Blancarde Foch' />
+    <tag k='interval' v='5' />
+    <tag k='interval:evening' v='15' />
+    <tag k='interval:saturday' v='7' />
+    <tag k='interval:sunday' v='12' />
+    <tag k='name' v='T2 : Blancarde -&gt; Arenc Le Silo' />
+    <tag k='network' v='RTM' />
+    <tag k='opening_hours' v='Mo-Su 00:00-00:30,05:00-24:00' />
+    <tag k='operator' v='Régie des Transports Marseillais' />
+    <tag k='public_transport:version' v='2' />
+    <tag k='ref' v='T2' />
+    <tag k='route' v='tram' />
+    <tag k='service' v='urban' />
+    <tag k='to' v='Les Caillols' />
+    <tag k='travel_time' v='22 min' />
+    <tag k='type' v='route' />
+    <tag k='wheelchair' v='yes' />
+  </relation>
+  <relation id='6265164' timestamp='2019-03-06T15:08:14Z' uid='1788169' user='Richardbla' visible='true' version='5' changeset='67847897'>
+    <member type='node' ref='1357157437' role='' />
+    <member type='way' ref='421543473' role='platform' />
+    <member type='node' ref='3637829331' role='stop' />
+    <member type='node' ref='308849467' role='stop' />
+    <member type='way' ref='421543470' role='platform' />
+    <member type='node' ref='1357157453' role='' />
+    <member type='way' ref='421543471' role='platform' />
+    <member type='node' ref='1357157443' role='' />
+    <member type='node' ref='4212953846' role='stop' />
+    <member type='node' ref='1357157415' role='stop' />
+    <member type='way' ref='421543481' role='platform' />
+    <member type='node' ref='1357157411' role='' />
+    <member type='node' ref='1357157429' role='stop' />
+    <member type='way' ref='421543477' role='platform' />
+    <member type='node' ref='1357157413' role='' />
+    <member type='way' ref='421543472' role='platform' />
+    <member type='node' ref='4212950336' role='stop' />
+    <member type='node' ref='1357157409' role='' />
+    <member type='way' ref='421543480' role='platform' />
+    <member type='way' ref='421543479' role='platform' />
+    <member type='node' ref='4212950335' role='stop' />
+    <member type='node' ref='4225948965' role='stop' />
+    <member type='way' ref='421543469' role='' />
+    <member type='node' ref='1956521556' role='' />
+    <member type='node' ref='1700152821' role='' />
+    <member type='node' ref='4212953840' role='stop' />
+    <member type='node' ref='1700152768' role='stop' />
+    <member type='node' ref='1357157450' role='stop' />
+    <member type='way' ref='421543457' role='platform' />
+    <member type='node' ref='531427839' role='' />
+    <member type='node' ref='1357157410' role='stop' />
+    <member type='way' ref='421543458' role='platform' />
+    <member type='node' ref='1357157414' role='' />
+    <member type='node' ref='1354254280' role='stop' />
+    <member type='node' ref='1145699422' role='' />
+    <member type='node' ref='423373233' role='stop' />
+    <member type='node' ref='1148173682' role='' />
+    <member type='node' ref='1354254275' role='stop' />
+    <member type='way' ref='421543467' role='platform' />
+    <member type='node' ref='1148173685' role='' />
+    <member type='node' ref='1148173683' role='' />
+    <member type='node' ref='536418426' role='' />
+    <member type='node' ref='536418424' role='' />
+    <member type='node' ref='4212953843' role='' />
+    <member type='node' ref='4212953844' role='' />
+    <member type='way' ref='421543483' role='platform' />
+    <member type='way' ref='421543482' role='platform' />
+    <member type='node' ref='410318111' role='stop' />
+    <member type='node' ref='1889730993' role='stop' />
+    <tag k='name' v='Réformés - Canebière' />
+    <tag k='network' v='RTM' />
+    <tag k='operator' v='Régie des Transports Marseillais' />
+    <tag k='public_transport' v='stop_area' />
+    <tag k='type' v='public_transport' />
+  </relation>
+</osm>
