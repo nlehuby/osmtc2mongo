@@ -3,6 +3,12 @@ name = "osm_transit_extractor"
 version = "0.2.0"
 authors = ["Pascal Rhod <pascal.rhod@canaltp.fr>", "Noémie Lehuby <noemie.lehuby@canaltp.fr>"]
 edition="2018"
+license = "AGPL-3.0"
+repository = "https://github.com/CanalTP/osm-transit-extractor"
+description = "Extract public transport data from an OpenStreetMap file"
+
+[badges]
+travis-ci = { repository = "CanalTP/osm-transit-extractor" }
 
 [dependencies]
 csv = "1.0.7"
