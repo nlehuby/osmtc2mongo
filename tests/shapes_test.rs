@@ -9,3 +9,13 @@ pub fn osm_shapes_filter_way_with_only_one_existing_node() {
     assert_eq!(lines[0].shape.len(), 1);
     assert_eq!(routes[0].shape.len(), 1);
 }
+
+#[test]
+pub fn osm_shapes_filter_ways_that_are_stop() {
+    let osm_path = std::env::current_dir()
+        .unwrap()
+        .join("tests/fixtures/shape_with_platform.osm.pbf");
+    let mut parsed_pbf = osmpbfreader::OsmPbfReader::new(std::fs::File::open(&osm_path).unwrap());
+    let routes = osm_transit_extractor::get_routes_from_osm(&mut parsed_pbf);
+    assert_eq!(routes[0].shape.len(), 0);
+}

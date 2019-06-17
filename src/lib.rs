@@ -295,6 +295,20 @@ fn is_route(obj: &osmpbfreader::OsmObj) -> bool {
         )
 }
 
+const STOP_ROLES: [&'static str; 7] = [
+    "stop",
+    "platform",
+    "stop_exit_only",
+    "stop_entry_only",
+    "platform_exit_only",
+    "platform_entry_only",
+    "fixme",
+];
+
+fn is_stop(refe: &osmpbfreader::Ref) -> bool {
+    STOP_ROLES.contains(&refe.role.as_str())
+}
+
 fn get_one_coord_from_way(
     obj_map: &BTreeMap<osmpbfreader::OsmId, osmpbfreader::OsmObj>,
     way: &osmpbfreader::objects::Way,
@@ -347,6 +361,7 @@ fn osm_route_to_shape(
     osm_relation
         .refs
         .iter()
+        .filter(|refe| !is_stop(*refe))
         .filter_map(|refe| obj_map.get(&refe.member))
         .filter_map(|osm_obj| osmpbfreader::OsmObj::way(osm_obj))
         .filter_map(|osm_way| {
@@ -372,19 +387,10 @@ fn osm_line_to_shape(
 }
 
 fn osm_route_to_stop_list(osm_relation: &osmpbfreader::Relation) -> Vec<String> {
-    let stop_roles = vec![
-        "stop",
-        "platform",
-        "stop_exit_only",
-        "stop_entry_only",
-        "platform_exit_only",
-        "platform_entry_only",
-        "fixme",
-    ];
     osm_relation
         .refs
         .iter()
-        .filter(|refe| stop_roles.contains(&refe.role.as_str()))
+        .filter(|refe| is_stop(*refe))
         .map(|refe| match refe.member {
             osmpbfreader::OsmId::Node(obj_id) => format!("node:{}", obj_id.0),
             osmpbfreader::OsmId::Way(obj_id) => format!("way:{}", obj_id.0),
