@@ -295,17 +295,18 @@ fn is_route(obj: &osmpbfreader::OsmObj) -> bool {
         )
 }
 
+const STOP_ROLES: [&'static str; 7] = [
+    "stop",
+    "platform",
+    "stop_exit_only",
+    "stop_entry_only",
+    "platform_exit_only",
+    "platform_entry_only",
+    "fixme",
+];
+
 fn is_stop(refe: &osmpbfreader::Ref) -> bool {
-    let stop_roles_in_relation = vec![
-        "stop",
-        "platform",
-        "stop_exit_only",
-        "stop_entry_only",
-        "platform_exit_only",
-        "platform_entry_only",
-        "fixme",
-    ];
-    stop_roles_in_relation.contains(&refe.role.as_str())
+    STOP_ROLES.contains(&refe.role.as_str())
 }
 
 fn get_one_coord_from_way(
