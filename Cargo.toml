@@ -1,6 +1,6 @@
 [package]
 name = "osm_transit_extractor"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Pascal Rhod <pascal.rhod@canaltp.fr>", "Noémie Lehuby <noemie.lehuby@canaltp.fr>"]
 edition="2018"
 license = "AGPL-3.0"
