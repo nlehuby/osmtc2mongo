@@ -103,10 +103,10 @@ pub struct Route {
     pub operator: String,
     pub network: String,
     pub mode: String,
-    pub interval: String,
+    pub frequency: String,
     pub opening_hours: String,
-    pub interval_conditional: String,
-    pub duration: String,
+    pub frequency_exceptions: String,
+    pub travel_time: String,
     pub all_osm_tags: osmpbfreader::objects::Tags,
     pub ordered_stops_id: Vec<String>,
     pub shape: Vec<Vec<Coord>>,
@@ -133,9 +133,9 @@ pub struct Line {
     pub operator: String,
     pub network: String,
     pub mode: String,
-    pub interval: String,
+    pub frequency: String,
     pub opening_hours: String,
-    pub interval_conditional: String,
+    pub frequency_exceptions: String,
     pub all_osm_tags: osmpbfreader::objects::Tags,
     pub shape: Vec<Vec<Coord>>,
     pub routes_id: Vec<String>,
@@ -432,14 +432,14 @@ fn osm_obj_to_route(
         colour: rel.tags.get("colour").cloned().unwrap_or_default(),
         operator: rel.tags.get("operator").cloned().unwrap_or_default(),
         network: rel.tags.get("network").cloned().unwrap_or_default(),
-        interval: rel.tags.get("interval").cloned().unwrap_or_default(),
+        frequency: rel.tags.get("interval").cloned().unwrap_or_default(),
         opening_hours: rel.tags.get("opening_hours").cloned().unwrap_or_default(),
-        interval_conditional: rel
+        frequency_exceptions: rel
             .tags
             .get("interval:conditional")
             .cloned()
             .unwrap_or_default(),
-        duration: rel.tags.get("duration").cloned().unwrap_or_default(),
+        travel_time: rel.tags.get("duration").cloned().unwrap_or_default(),
         all_osm_tags: osm_tags,
         ordered_stops_id: osm_route_to_stop_list(rel),
         shape: osm_route_to_shape(obj_map, rel),
@@ -459,9 +459,9 @@ fn osm_obj_to_line(
         mode: rel.tags.get("route_master").cloned().unwrap_or_default(),
         operator: rel.tags.get("operator").cloned().unwrap_or_default(),
         network: rel.tags.get("network").cloned().unwrap_or_default(),
-        interval: rel.tags.get("interval").cloned().unwrap_or_default(),
+        frequency: rel.tags.get("interval").cloned().unwrap_or_default(),
         opening_hours: rel.tags.get("opening_hours").cloned().unwrap_or_default(),
-        interval_conditional: rel
+        frequency_exceptions: rel
             .tags
             .get("interval:conditional")
             .cloned()
@@ -722,10 +722,10 @@ pub fn write_routes_to_csv<P: AsRef<Path>>(routes: Vec<Route>, output_dir: P, al
         "operator",
         "network",
         "mode",
-        "interval",
+        "frequency",
         "opening_hours",
-        "interval_conditional",
-        "duration",
+        "frequency_exceptions",
+        "travel_time",
         "shape",
     ];
     if all_tags {
@@ -751,10 +751,10 @@ pub fn write_routes_to_csv<P: AsRef<Path>>(routes: Vec<Route>, output_dir: P, al
             r.operator.to_string(),
             r.network.to_string(),
             r.mode.to_string(),
-            r.interval.to_string(),
+            r.frequency.to_string(),
             r.opening_hours.to_string(),
-            r.interval_conditional.to_string(),
-            r.duration.to_string(),
+            r.frequency_exceptions.to_string(),
+            r.travel_time.to_string(),
             shape_to_wkt(&r.shape),
         ];
         if all_tags {
@@ -793,9 +793,9 @@ pub fn write_lines_to_csv<P: AsRef<Path>>(lines: Vec<Line>, output_dir: P, all_t
         "operator",
         "network",
         "mode",
-        "interval",
+        "frequency",
         "opening_hours",
-        "interval_conditional",
+        "frequency_exceptions",
         "shape",
     ];
     if all_tags {
@@ -824,9 +824,9 @@ pub fn write_lines_to_csv<P: AsRef<Path>>(lines: Vec<Line>, output_dir: P, all_t
             l.operator.to_string(),
             l.network.to_string(),
             l.mode.to_string(),
-            l.interval.to_string(),
+            l.frequency.to_string(),
             l.opening_hours.to_string(),
-            l.interval_conditional.to_string(),
+            l.frequency_exceptions.to_string(),
             shape_to_wkt(&l.shape),
         ];
         if all_tags {
